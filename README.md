@@ -46,7 +46,6 @@ Copy `.env.example` to `.env` only if you need to override defaults:
 
 ```env
 PORT=3000
-APP_URL="http://localhost:3000"
 ```
 
 ## Scripts
@@ -81,7 +80,7 @@ The login endpoint accepts any email and creates a customer account on the fly; 
 
 ```text
 server/
-  api.ts          Express routes (auth, catalog, cart, coupons, orders, reviews, admin)
+  api.ts          Express routes (auth, catalog, coupons, orders, reviews, admin)
   db.ts           In-memory data store, seeds, pricing and shipping rules
 src/
   components/     Header, footer, cart drawer, modals, product cards

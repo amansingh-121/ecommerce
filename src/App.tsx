@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { StoreProvider, useStore } from './context/StoreContext.tsx';
 import { Header } from './components/Header.tsx';
@@ -9,12 +9,25 @@ import { QuickViewModal } from './components/QuickViewModal.tsx';
 
 // Page Views
 import { HomePage } from './pages/HomePage.tsx';
-import { CatalogPage } from './pages/CatalogPage.tsx';
-import { ProductDetailPage } from './pages/ProductDetailPage.tsx';
-import { CheckoutPage } from './pages/CheckoutPage.tsx';
-import { OrdersPage } from './pages/OrdersPage.tsx';
-import { AccountPage } from './pages/AccountPage.tsx';
-import { AdminDashboard } from './pages/AdminDashboard.tsx';
+
+const CatalogPage = React.lazy(() =>
+  import('./pages/CatalogPage.tsx').then((module) => ({ default: module.CatalogPage }))
+);
+const ProductDetailPage = React.lazy(() =>
+  import('./pages/ProductDetailPage.tsx').then((module) => ({ default: module.ProductDetailPage }))
+);
+const CheckoutPage = React.lazy(() =>
+  import('./pages/CheckoutPage.tsx').then((module) => ({ default: module.CheckoutPage }))
+);
+const OrdersPage = React.lazy(() =>
+  import('./pages/OrdersPage.tsx').then((module) => ({ default: module.OrdersPage }))
+);
+const AccountPage = React.lazy(() =>
+  import('./pages/AccountPage.tsx').then((module) => ({ default: module.AccountPage }))
+);
+const AdminDashboard = React.lazy(() =>
+  import('./pages/AdminDashboard.tsx').then((module) => ({ default: module.AdminDashboard }))
+);
 
 const AppContent: React.FC = () => {
   const { currentView, selectedProductId } = useStore();
@@ -50,12 +63,20 @@ const AppContent: React.FC = () => {
             className="w-full h-full"
           >
             {currentView === 'home' && <HomePage />}
-            {currentView === 'catalog' && <CatalogPage />}
-            {currentView === 'product-detail' && <ProductDetailPage />}
-            {currentView === 'checkout' && <CheckoutPage />}
-            {currentView === 'orders' && <OrdersPage />}
-            {currentView === 'profile' && <AccountPage />}
-            {currentView === 'admin' && <AdminDashboard />}
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center py-24 text-xs text-neutral-500">
+                  Loading…
+                </div>
+              }
+            >
+              {currentView === 'catalog' && <CatalogPage />}
+              {currentView === 'product-detail' && <ProductDetailPage />}
+              {currentView === 'checkout' && <CheckoutPage />}
+              {currentView === 'orders' && <OrdersPage />}
+              {currentView === 'profile' && <AccountPage />}
+              {currentView === 'admin' && <AdminDashboard />}
+            </Suspense>
           </motion.div>
         </AnimatePresence>
       </main>

@@ -236,7 +236,7 @@ export const Header: React.FC = () => {
                   </div>
                 ) : (
                   <div className="p-4 text-center text-xs text-neutral-500">
-                    No products found for "{searchQuery}". Try searching for audio, jacket, lamp, or tennis.
+                    No products found for "{searchQuery}". Try searching for headphones, sneakers, vases, or candles.
                   </div>
                 )}
               </div>

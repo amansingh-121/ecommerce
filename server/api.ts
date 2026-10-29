@@ -331,6 +331,7 @@ const STOP_WORDS = new Set([
   'some', 'any', 'best', 'good', 'great', 'something', 'recommend', 'suggest',
   'about', 'from', 'into', 'under', 'over', 'below', 'above', 'between', 'budget',
   'price', 'prices', 'rupees', 'inr', 'rs', 'upto', 'less', 'than', 'within',
+  'gift', 'gifts', 'present', 'buy', 'purchase', 'shop', 'shopping',
 ]);
 
 function tokenizeQuery(query: string): string[] {
@@ -339,6 +340,46 @@ function tokenizeQuery(query: string): string[] {
     .replace(/[^a-z0-9\s-]/g, ' ')
     .split(/\s+/)
     .filter((token) => token.length > 2 && !STOP_WORDS.has(token) && !/^\d+$/.test(token));
+}
+
+// Maps everyday search terms to the vocabulary used across the catalog.
+const QUERY_SYNONYMS: Record<string, string[]> = {
+  shoes: ['shoe', 'sneaker', 'sneakers', 'runner', 'runners', 'footwear'],
+  shoe: ['shoes', 'sneaker', 'sneakers', 'runner', 'runners', 'footwear'],
+  sneakers: ['sneaker', 'shoes', 'runners', 'footwear'],
+  running: ['runner', 'runners', 'sneaker', 'sneakers', 'training'],
+  headphone: ['headphones', 'earbuds', 'earphones', 'audio', 'sound'],
+  headphones: ['headphone', 'earbuds', 'earphones', 'audio', 'sound'],
+  earbuds: ['earbud', 'headphones', 'audio', 'wireless'],
+  audio: ['headphones', 'earbuds', 'sound', 'speaker'],
+  watch: ['watches', 'timepiece', 'smartwatch', 'chronova'],
+  watches: ['watch', 'timepiece', 'smartwatch', 'chronova'],
+  timepiece: ['watch', 'watches', 'chronova'],
+  bag: ['bags', 'tote', 'crossbody', 'satchel', 'handbag'],
+  bags: ['bag', 'tote', 'crossbody', 'satchel', 'handbag'],
+  tote: ['bags', 'crossbody', 'satchel'],
+  candle: ['candles', 'wax', 'fragrance', 'scent'],
+  candles: ['candle', 'wax', 'fragrance', 'scent'],
+  vase: ['vases', 'planter', 'ceramic', 'decor'],
+  vases: ['vase', 'planter', 'ceramic', 'decor'],
+  skincare: ['skin', 'serum', 'elixir', 'moisturizer', 'recovery'],
+  perfume: ['fragrance', 'parfum', 'scent'],
+  fragrance: ['perfume', 'parfum', 'scent', 'candle'],
+  apparel: ['clothing', 'shirt', 'hoodie', 'trench', 'coat', 'knit'],
+  clothing: ['apparel', 'shirt', 'hoodie', 'trench', 'coat', 'knit'],
+  sunglasses: ['eyewear', 'glasses', 'frames'],
+  eyewear: ['sunglasses', 'glasses', 'frames'],
+  gym: ['dumbbells', 'weights', 'strength', 'training'],
+  weights: ['dumbbells', 'strength', 'gym'],
+  yoga: ['mat', 'cork', 'blocks', 'stretch'],
+};
+
+function tokenVariants(token: string): string[] {
+  return [token, ...(QUERY_SYNONYMS[token] || [])];
+}
+
+function matchesAny(haystack: string, variants: string[]): boolean {
+  return variants.some((variant) => haystack.includes(variant));
 }
 
 function parsePriceRange(query: string): { min?: number; max?: number } {
@@ -371,11 +412,14 @@ function scoreProduct(product: Product, tokens: string[]): number {
 
   let score = 0;
   for (const token of tokens) {
-    if (name.includes(token)) score += 6;
-    if (brand.includes(token)) score += 4;
-    if (category.includes(token)) score += 5;
-    if (tags.some((tag) => tag.includes(token) || token.includes(tag))) score += 4;
-    if (details.includes(token)) score += 1;
+    const variants = tokenVariants(token);
+    if (matchesAny(name, variants)) score += 6;
+    if (matchesAny(brand, variants)) score += 4;
+    if (matchesAny(category, variants)) score += 5;
+    if (tags.some((tag) => variants.some((variant) => tag.includes(variant) || variant.includes(tag)))) {
+      score += 4;
+    }
+    if (matchesAny(details, variants)) score += 1;
   }
   return score;
 }
@@ -457,7 +501,7 @@ apiRouter.post('/concierge', (req: Request, res: Response) => {
     reply: matched.length
       ? `${categoryNote} I curated ${products.length} ${
           products.length === 1 ? 'piece' : 'pieces'
-        }${budgetNote} that balance craftsmanship, everyday performance and value.`
+        }${budgetNote} that balance craftsmanship, everyday performance and value.`.trim()
       : `I did not find an exact match${budgetNote}, so here are ${products.length} of our most-loved pieces that come closest to what you are looking for.`,
     highlightReason: matched.length
       ? `Closest matches for "${query.trim()}"`
