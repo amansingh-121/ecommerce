@@ -42,3 +42,12 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a1a1aa;
 }
+
+/* Hide scrollbars on horizontal chip rows while keeping scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

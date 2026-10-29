@@ -1,5 +1,12 @@
-import React, { useState } from 'react';
-import { X, Sparkles, Send, ArrowRight, ShoppingBag } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  X,
+  Sparkles,
+  Send,
+  ArrowRight,
+  ShoppingBag,
+  CornerDownLeft,
+} from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
 import { Product } from '../types/ecommerce.ts';
 import { ProductImage } from './ProductImage.tsx';
@@ -12,6 +19,25 @@ interface Message {
   highlightReason?: string;
   matchedProducts?: Product[];
 }
+
+const SAMPLE_PROMPTS = [
+  {
+    label: 'Wireless headphones',
+    query: 'Recommend wireless studio headphones with ANC',
+  },
+  {
+    label: 'Watch under ₹5,000',
+    query: 'Find an automatic watch under ₹5,000',
+  },
+  {
+    label: 'Ceramic home decor',
+    query: 'Show me minimal ceramic home decor',
+  },
+  {
+    label: 'Trench for travel',
+    query: 'I need a structured trench coat for monsoon travel',
+  },
+];
 
 export const StyleConciergeModal: React.FC = () => {
   const {
@@ -26,11 +52,25 @@ export const StyleConciergeModal: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      text: 'Welcome to Aureva. I am your personal shopping concierge. Ask me to find the ideal audio gear, fine timepieces, minimal apparel, or curated objects for your home.',
+      text: 'Welcome to Aureva. Tell me what you are looking for — audio, timepieces, apparel or objects for the home — and I will curate a short list for you.',
     },
   ]);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   useOverlay(isConciergeOpen, () => setIsConciergeOpen(false));
+
+  useEffect(() => {
+    if (!isConciergeOpen) return;
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    return () => cancelAnimationFrame(frame);
+  }, [isConciergeOpen]);
+
+  useEffect(() => {
+    const node = scrollRef.current;
+    if (node) node.scrollTo({ top: node.scrollHeight, behavior: 'smooth' });
+  }, [messages, isLoading]);
 
   if (!isConciergeOpen) return null;
 
@@ -71,47 +111,59 @@ export const StyleConciergeModal: React.FC = () => {
     }
   };
 
-  const samplePrompts = [
-    'Recommend wireless studio headphones with ANC',
-    'Find an automatic watch under ₹5,000',
-    'Show me minimal ceramic home decor',
-    'I need a structured trench coat for monsoon travel',
-  ];
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-neutral-900/50 backdrop-blur-xs transition-opacity"
+        className="absolute inset-0 bg-neutral-950/55 backdrop-blur-sm"
         onClick={() => setIsConciergeOpen(false)}
       />
 
-      <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col max-h-[85vh]">
+      {/* Square dialog */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Aureva Style Concierge"
+        className="relative flex h-[min(88vh,600px)] w-full max-w-[600px] flex-col overflow-hidden rounded-[26px] border border-white/10 bg-white shadow-[0_32px_80px_-24px_rgba(23,23,23,0.55)] ring-1 ring-black/5"
+      >
         {/* Header */}
-        <div className="px-6 py-4 bg-neutral-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center text-amber-400">
-              <Sparkles className="w-4 h-4" />
+        <div className="relative shrink-0 overflow-hidden bg-[linear-gradient(135deg,#1c1917_0%,#26201a_60%,#2f2418_100%)] px-5 py-4 text-white">
+          <div className="pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#d8a878]/20 blur-2xl" />
+          <div className="relative flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-[#e9c79f] shadow-inner">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="font-display text-sm font-semibold tracking-tight">
+                  Aureva Style Concierge
+                </h3>
+                <p className="mt-0.5 flex items-center gap-1.5 text-[10px] text-neutral-400">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400/70" />
+                    <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  </span>
+                  Online · personal styling, thoughtfully curated
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-semibold tracking-tight font-display">
-                Aureva Style Concierge
-              </h3>
-              <p className="text-[11px] text-neutral-400">
-                Personal styling, thoughtfully curated
-              </p>
-            </div>
+            <button
+              onClick={() => setIsConciergeOpen(false)}
+              aria-label="Close concierge"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
-          <button
-            onClick={() => setIsConciergeOpen(false)}
-            className="text-neutral-400 hover:text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
         </div>
 
-        {/* Conversation Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Conversation body */}
+        <div
+          ref={scrollRef}
+          className={`min-h-0 flex-1 space-y-5 overflow-y-auto bg-[#faf7f2] px-5 py-5 ${
+            messages.length === 1 ? 'flex flex-col justify-center' : ''
+          }`}
+        >
           {messages.map((msg, idx) => (
             <div
               key={idx}
@@ -119,68 +171,76 @@ export const StyleConciergeModal: React.FC = () => {
                 msg.role === 'user' ? 'items-end' : 'items-start'
               }`}
             >
+              {msg.role === 'assistant' && (
+                <span className="mb-1.5 ml-1 inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.16em] text-[#a97a4d]">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  Concierge
+                </span>
+              )}
+
               <div
-                className={`max-w-[85%] rounded-xl px-4 py-3 text-sm ${
+                className={`max-w-[88%] px-4 py-3 text-[13px] leading-6 ${
                   msg.role === 'user'
-                    ? 'bg-neutral-900 text-white font-medium'
-                    : 'bg-neutral-100 text-neutral-800 border border-neutral-200/60 leading-relaxed'
+                    ? 'rounded-2xl rounded-tr-md bg-neutral-900 font-medium text-white shadow-sm'
+                    : 'rounded-2xl rounded-tl-md border border-[#eadfd2] bg-white text-neutral-700 shadow-[0_1px_2px_rgba(23,23,23,0.04)]'
                 }`}
               >
                 {msg.text}
               </div>
 
-              {/* Matched Products Card Grid */}
+              {/* Matched products */}
               {msg.matchedProducts && msg.matchedProducts.length > 0 && (
-                <div className="mt-3 w-full max-w-xl space-y-2">
+                <div className="mt-3 w-full space-y-2">
                   {msg.highlightReason && (
-                    <div className="text-[11px] font-medium text-neutral-500 uppercase tracking-wider px-1">
+                    <div className="px-1 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-400">
                       {msg.highlightReason}
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {msg.matchedProducts.map((prod) => (
                       <div
                         key={prod.id}
-                        className="bg-white border border-neutral-200 rounded-xl p-3 flex gap-3 hover:border-neutral-400 transition-colors shadow-xs"
+                        className="group flex gap-3 rounded-xl border border-neutral-200/90 bg-white p-2.5 transition-all hover:border-[#d9b791] hover:shadow-md"
                       >
-                        <div className="w-16 h-16 rounded-lg bg-neutral-100 overflow-hidden shrink-0">
+                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
                           <ProductImage
                             src={prod.thumbnail || prod.images[0]}
                             alt={prod.name}
                             aspectRatio="square"
                           />
                         </div>
-                        <div className="flex-1 flex flex-col justify-between">
-                          <div>
-                            <div className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold">
+                        <div className="flex min-w-0 flex-1 flex-col justify-between">
+                          <div className="min-w-0">
+                            <div className="truncate text-[9px] font-bold uppercase tracking-[0.14em] text-[#a97a4d]">
                               {prod.brand}
                             </div>
-                            <h5 className="text-xs font-bold text-neutral-900 line-clamp-1">
+                            <h5 className="line-clamp-2 text-[11px] font-bold leading-4 text-neutral-900">
                               {prod.name}
                             </h5>
-                            <div className="text-xs font-semibold text-neutral-900 mt-0.5 tabular-nums">
+                            <div className="mt-0.5 text-[11px] font-semibold tabular-nums text-neutral-700">
                               {formatPrice(prod.basePrice)}
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 mt-2">
+                          <div className="mt-1.5 flex items-center gap-1.5">
                             <button
                               onClick={() => {
                                 navigateToProduct(prod.id);
                                 setIsConciergeOpen(false);
                               }}
-                              className="px-2 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-[11px] font-semibold rounded flex items-center gap-1 transition-colors"
+                              className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-1 text-[10px] font-semibold text-neutral-800 transition-colors hover:bg-neutral-200"
                             >
-                              <span>View</span>
-                              <ArrowRight className="w-2.5 h-2.5" />
+                              View
+                              <ArrowRight className="h-2.5 w-2.5" />
                             </button>
                             <button
                               onClick={() => addToCart(prod, prod.variants[0], 1)}
-                              className="px-2 py-1 bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-semibold rounded flex items-center gap-1 transition-colors"
+                              aria-label={`Add ${prod.name} to bag`}
+                              className="inline-flex items-center gap-1 rounded-md bg-neutral-900 px-2 py-1 text-[10px] font-semibold text-white transition-colors hover:bg-[#965b2a]"
                             >
-                              <ShoppingBag className="w-2.5 h-2.5" />
-                              <span>Bag</span>
+                              <ShoppingBag className="h-2.5 w-2.5" />
+                              Bag
                             </button>
                           </div>
                         </div>
@@ -192,52 +252,91 @@ export const StyleConciergeModal: React.FC = () => {
             </div>
           ))}
 
+          {messages.length === 1 && !isLoading && (
+            <div className="pt-1">
+              <p className="mb-2 ml-1 text-[9px] font-bold uppercase tracking-[0.16em] text-neutral-400">
+                Popular requests
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {SAMPLE_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt.label}
+                    onClick={() => handleSend(prompt.query)}
+                    className="group flex items-start justify-between gap-2 rounded-xl border border-[#eadfd2] bg-white px-3 py-3 text-left transition-all hover:border-[#c99e6f] hover:shadow-sm"
+                  >
+                    <span className="text-[11px] font-medium leading-4 text-neutral-700">
+                      {prompt.label}
+                    </span>
+                    <ArrowRight className="mt-0.5 h-3 w-3 shrink-0 text-[#b08a63] transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isLoading && (
-            <div className="flex items-center gap-2 text-xs text-neutral-500 italic py-2">
-              <div className="w-2 h-2 rounded-full bg-neutral-400 animate-ping" />
-              <span>Aureva is curating the closest matches from the collection...</span>
+            <div className="flex items-center gap-2.5 rounded-2xl rounded-tl-md border border-[#eadfd2] bg-white px-4 py-3 text-[11px] italic text-neutral-500 shadow-sm">
+              <span className="flex gap-1">
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#b47a3e] [animation-delay:-0.2s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#b47a3e] [animation-delay:-0.1s]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#b47a3e]" />
+              </span>
+              Curating the closest matches from the collection…
             </div>
           )}
         </div>
 
-        {/* Quick prompt chips */}
-        <div className="px-6 py-2 bg-neutral-50 border-t border-neutral-100 flex items-center gap-2 overflow-x-auto text-xs">
-          <span className="text-neutral-400 text-[11px] whitespace-nowrap">Try:</span>
-          {samplePrompts.map((prompt, i) => (
-            <button
-              key={i}
-              onClick={() => handleSend(prompt)}
-              className="px-2.5 py-1 bg-white border border-neutral-200 hover:border-neutral-400 rounded-full text-neutral-600 hover:text-neutral-900 whitespace-nowrap text-xs transition-colors shrink-0"
-            >
-              {prompt}
-            </button>
-          ))}
-        </div>
+        {/* Quick prompts — shown once the conversation has started */}
+        {messages.length > 1 && (
+          <div className="shrink-0 border-t border-[#eee5d9] bg-[#fdfbf7] px-4 py-2.5">
+            <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
+              <span className="shrink-0 pr-0.5 text-[9px] font-bold uppercase tracking-[0.14em] text-[#b08a63]">
+                Try
+              </span>
+              {SAMPLE_PROMPTS.map((prompt) => (
+                <button
+                  key={prompt.label}
+                  onClick={() => handleSend(prompt.query)}
+                  className="shrink-0 whitespace-nowrap rounded-full border border-[#e7d8c6] bg-white px-2.5 py-1 text-[10px] font-medium text-neutral-600 transition-colors hover:border-[#c99e6f] hover:bg-[#fbf3e9] hover:text-neutral-900"
+                >
+                  {prompt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-        {/* Input Footer */}
+        {/* Input footer */}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             handleSend();
           }}
-          className="p-4 border-t border-neutral-200 bg-white flex gap-2"
+          className="shrink-0 border-t border-neutral-200/80 bg-white px-4 pb-3 pt-3"
         >
-          <input
-            type="text"
-            placeholder="Describe what you are looking for (e.g. running shoes, daily watch, gift under ₹2,000)..."
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            disabled={isLoading}
-            className="flex-1 px-4 py-2.5 text-sm bg-neutral-100 border border-transparent rounded-xl focus:bg-white focus:border-neutral-400 focus:outline-none transition-colors"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="px-4 py-2.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-xl transition-colors flex items-center justify-center"
-            aria-label="Send message"
-          >
-            <Send className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 py-1 pl-4 pr-1 transition-colors focus-within:border-[#c99e6f] focus-within:bg-white focus-within:ring-4 focus-within:ring-[#d8a878]/15">
+            <input
+              ref={inputRef}
+              type="text"
+              placeholder="Describe what you are looking for…"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              disabled={isLoading}
+              className="min-w-0 flex-1 bg-transparent py-2 text-[13px] text-neutral-800 placeholder:text-neutral-400 focus:outline-none disabled:opacity-60"
+            />
+            <button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-900 text-white transition-colors hover:bg-[#965b2a] disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label="Send message"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <p className="mt-2 flex items-center justify-center gap-1 text-[9px] text-neutral-400">
+            <CornerDownLeft className="h-2.5 w-2.5" />
+            Enter to send · Esc to close
+          </p>
         </form>
       </div>
     </div>

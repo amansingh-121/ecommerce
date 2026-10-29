@@ -153,7 +153,7 @@ export const Header: React.FC = () => {
           </nav>
 
           {/* Center Prominent Search Bar */}
-          <div className="flex-1 max-w-md mx-2 sm:mx-4 relative" ref={searchContainerRef}>
+          <div className="flex-1 min-w-0 max-w-md mx-2 sm:mx-4 relative" ref={searchContainerRef}>
             <div className="relative flex items-center">
               <Search className="absolute left-3.5 w-4 h-4 text-neutral-400 pointer-events-none" />
               <input
