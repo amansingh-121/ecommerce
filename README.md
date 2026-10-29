@@ -4,11 +4,14 @@ Aureva is a full-stack, luxury-inspired e-commerce storefront with a React 19 + 
 
 ## Highlights
 
-- **Storefront** — 27 products across Electronics, Fashion, Home, Beauty, and Sports with search, category/subcategory filters, price bands, ratings, discount filters, and sorting.
-- **Cart & checkout** — guest-friendly cart with size/color variants, quantity controls, coupon codes, GST (18%), and free standard shipping above ₹2,999.
-- **Orders** — order confirmation, live dispatch timeline, invoices, cancellation, and return requests.
-- **Accounts** — profile editing, saved addresses, a persistent wishlist, and order history.
-- **Admin suite** — revenue/order analytics, product management, inventory updates, coupon management, and customer overview.
+- **Storefront** — 27 products across Electronics, Fashion, Home, Beauty, and Sports with search, category/subcategory filters, brand multi-select, price bands, ratings, discount filters, sorting, and paginated results.
+- **Local imagery** — all 35 product, category, hero, and avatar images are bundled under `public/images/` for instant, reliable rendering with no remote image dependency.
+- **Home experience** — curated hero, five collection tiles, new arrivals, best sellers, featured customer reviews, copyable live coupon codes, and newsletter signup.
+- **Cart & checkout** — guest-friendly cart with size/color variants, quantity controls, saved-address selection, coupon codes, GST (18%), and free standard shipping above ₹2,999.
+- **Orders** — order confirmation, live dispatch timeline, status filters, downloadable GST invoices, cancellation, and return requests.
+- **Accounts** — an overview dashboard with order stats, profile editing, saved addresses with defaults, a persistent wishlist with recommendations, and order history.
+- **Product discovery** — recently viewed products, quick view, wishlist actions, review summaries, and the Style Concierge.
+- **Admin suite** — revenue/order analytics, product management, inventory updates, category CRUD, review moderation, coupon create/edit/delete, and customer lifetime-value/activation controls.
 - **Style concierge** — an on-server recommendation engine that suggests products based on budget, category, and style preferences. No third-party services are required.
 - **Review synthesis** — a local consensus summary generated from actual customer reviews on the product page.
 
@@ -79,6 +82,8 @@ The login endpoint accepts any email and creates a customer account on the fly; 
 ## Project Layout
 
 ```text
+public/
+  images/         Local product, category, hero, and avatar imagery
 server/
   api.ts          Express routes (auth, catalog, coupons, orders, reviews, admin)
   db.ts           In-memory data store, seeds, pricing and shipping rules
@@ -91,6 +96,19 @@ src/
   utils/          Currency, cart calculator, order engine, style helpers
   types/          Shared TypeScript interfaces
 ```
+
+## API Overview
+
+| Area | Endpoints |
+| --- | --- |
+| Catalog | `GET /api/products`, `GET /api/products/:id`, `GET /api/categories` |
+| Accounts | `POST /api/auth/login`, `POST /api/auth/register`, `GET /api/auth/me` |
+| Commerce | `GET /api/coupons/active`, `POST /api/coupons/validate`, `POST /api/orders`, `GET /api/orders` |
+| Orders | `GET /api/orders/:id`, `GET /api/orders/:id/invoice`, `PATCH /api/orders/:id/status`, cancel/return actions |
+| Reviews | `GET/POST /api/products/:id/reviews`, `GET /api/reviews/featured`, `POST /api/reviews/summary` |
+| Discovery | `POST /api/concierge` |
+| Newsletter | `POST /api/newsletter/subscribe` |
+| Admin | Admin stats, products, categories, coupons, customers, reviews, and moderation under `/api/admin/*` |
 
 ## Notes
 

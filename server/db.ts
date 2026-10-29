@@ -7,6 +7,10 @@ import {
   User,
   AdminStats,
   OrderStatus,
+  AdminReview,
+  AdminCustomer,
+  FeaturedReview,
+  InvoiceData,
 } from '../src/types/ecommerce.ts';
 import { transitionOrder } from '../src/utils/order-engine.ts';
 import {
@@ -231,7 +235,7 @@ export const INITIAL_ORDERS: Order[] = [
         productId: 'prod-elec-5',
         productName: 'Aureva Studio ANC Over-Ear Headphones',
         productImage:
-          'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
+          '/images/1505740420928-5e560c06d30e.jpg',
         variantName: 'Matte Charcoal',
         unitPrice: 4499,
         quantity: 1,
@@ -298,7 +302,7 @@ export const INITIAL_ORDERS: Order[] = [
         productId: 'prod-sport-1',
         productName: 'Align Pro Cork Yoga Mat 6mm',
         productImage:
-          'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=800&auto=format&fit=crop',
+          '/images/1601925260368-ae2f83cf8b7f.jpg',
         variantName: 'Natural Cork & Obsidian Black',
         unitPrice: 2499,
         quantity: 1,
@@ -349,7 +353,7 @@ export const INITIAL_ORDERS: Order[] = [
         productId: 'prod-elec-3',
         productName: 'Chronova Heritage Automatic Watch',
         productImage:
-          'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop',
+          '/images/1523275335684-37898b6baf30.jpg',
         variantName: 'Brushed Silver 41mm',
         unitPrice: 5499,
         quantity: 1,
@@ -380,6 +384,7 @@ class InMemoryStore {
   private coupons: Coupon[] = [...INITIAL_COUPONS];
   private reviews: Review[] = [...INITIAL_REVIEWS];
   private orders: Order[] = [...INITIAL_ORDERS];
+  private newsletterSubscribers: { email: string; subscribedAt: string }[] = [];
   private users: User[] = [
     {
       id: 'usr-alex',
@@ -387,7 +392,7 @@ class InMemoryStore {
       email: 'alex@aureva.com',
       phone: '+91 98200 12345',
       role: 'customer',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
+      avatarUrl: '/images/1534528741775-53994a69daeb.jpg',
       savedAddresses: [
         {
           id: 'addr-default-1',
@@ -420,7 +425,7 @@ class InMemoryStore {
       email: 'admin@aureva.com',
       phone: '+91 98111 77788',
       role: 'admin',
-      avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=300&auto=format&fit=crop',
+      avatarUrl: '/images/1580489944761-15a19d654956.jpg',
       savedAddresses: [],
       createdAt: '2026-01-01T00:00:00Z',
     },
@@ -430,7 +435,7 @@ class InMemoryStore {
       email: 'elena.rostova@example.com',
       phone: '+91 98765 43210',
       role: 'customer',
-      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?q=80&w=300&auto=format&fit=crop',
+      avatarUrl: '/images/1494790108377-be9c29b29330.jpg',
       savedAddresses: [
         {
           id: 'addr-2',
@@ -595,21 +600,71 @@ class InMemoryStore {
 
   // CATEGORIES
   getCategories(): Category[] {
-    return this.categories;
+    return this.categories.map((category) => ({
+      ...category,
+      productCount: this.products.filter((product) => product.category === category.name).length,
+    }));
   }
 
   createCategory(category: Omit<Category, 'id'>): Category {
     const newCat: Category = {
       ...category,
       id: `cat-${Date.now()}`,
+      productCount: 0,
     };
     this.categories.push(newCat);
     return newCat;
   }
 
+  updateCategory(id: string, updates: Partial<Category>): Category | undefined {
+    const index = this.categories.findIndex((category) => category.id === id);
+    if (index === -1) return undefined;
+
+    const existing = this.categories[index];
+    const updated: Category = {
+      ...existing,
+      ...updates,
+      id: existing.id,
+    };
+    this.categories[index] = updated;
+
+    if (updates.name && updates.name !== existing.name) {
+      this.products = this.products.map((product) =>
+        product.category === existing.name ? { ...product, category: updates.name! } : product
+      );
+    }
+    return updated;
+  }
+
+  deleteCategory(id: string): { success: boolean; error?: string } {
+    const category = this.categories.find((entry) => entry.id === id);
+    if (!category) return { success: false, error: 'Category not found.' };
+
+    const productCount = this.products.filter((product) => product.category === category.name).length;
+    if (productCount > 0) {
+      return {
+        success: false,
+        error: `Move or delete the ${productCount} product(s) in ${category.name} before removing this category.`,
+      };
+    }
+
+    this.categories = this.categories.filter((entry) => entry.id !== id);
+    return { success: true };
+  }
+
   // COUPONS
   getCoupons(): Coupon[] {
     return this.coupons;
+  }
+
+  getActiveCoupons(): Coupon[] {
+    const now = Date.now();
+    return this.coupons.filter((coupon) => {
+      if (!coupon.isActive) return false;
+      if (coupon.expiryDate && new Date(coupon.expiryDate).getTime() < now) return false;
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return false;
+      return true;
+    });
   }
 
   getCoupon(code: string): Coupon | undefined {
@@ -619,15 +674,43 @@ class InMemoryStore {
   }
 
   createCoupon(coupon: Coupon): Coupon {
+    const normalized: Coupon = {
+      ...coupon,
+      code: coupon.code.trim().toUpperCase(),
+    };
     const existingIdx = this.coupons.findIndex(
-      (c) => c.code.toUpperCase() === coupon.code.toUpperCase()
+      (c) => c.code.toUpperCase() === normalized.code.toUpperCase()
     );
     if (existingIdx !== -1) {
-      this.coupons[existingIdx] = coupon;
+      this.coupons[existingIdx] = normalized;
     } else {
-      this.coupons.push(coupon);
+      this.coupons.push(normalized);
     }
-    return coupon;
+    return normalized;
+  }
+
+  updateCoupon(code: string, updates: Partial<Coupon>): Coupon | undefined {
+    const index = this.coupons.findIndex(
+      (coupon) => coupon.code.toUpperCase() === code.trim().toUpperCase()
+    );
+    if (index === -1) return undefined;
+
+    const existing = this.coupons[index];
+    const updated: Coupon = {
+      ...existing,
+      ...updates,
+      code: (updates.code || existing.code).trim().toUpperCase(),
+    };
+    this.coupons[index] = updated;
+    return updated;
+  }
+
+  deleteCoupon(code: string): boolean {
+    const prevLength = this.coupons.length;
+    this.coupons = this.coupons.filter(
+      (coupon) => coupon.code.toUpperCase() !== code.trim().toUpperCase()
+    );
+    return this.coupons.length < prevLength;
   }
 
   // ORDERS
@@ -804,7 +887,40 @@ class InMemoryStore {
 
   // REVIEWS
   getReviews(productId: string): Review[] {
-    return this.reviews.filter((r) => r.productId === productId);
+    return this.reviews.filter(
+      (review) => review.productId === productId && review.isApproved !== false
+    );
+  }
+
+  getFeaturedReviews(limit = 4): FeaturedReview[] {
+    return [...this.reviews]
+      .filter((review) => review.isApproved !== false)
+      .sort(
+        (a, b) =>
+          b.helpfulCount - a.helpfulCount ||
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
+      .slice(0, limit)
+      .map((review) => {
+        const product = this.getProductById(review.productId);
+        return {
+          ...review,
+          productName: product?.name || 'Aureva Collection',
+          productSlug: product?.slug || '',
+          productImage: product?.thumbnail || product?.images[0] || '',
+        };
+      });
+  }
+
+  getAllReviews(): AdminReview[] {
+    return this.reviews.map((review) => {
+      const product = this.getProductById(review.productId);
+      return {
+        ...review,
+        productName: product?.name || 'Product removed',
+        productSlug: product?.slug || '',
+      };
+    });
   }
 
   addReview(
@@ -817,25 +933,72 @@ class InMemoryStore {
       productId,
       createdAt: new Date().toISOString(),
       helpfulCount: 0,
+      isApproved: true,
     };
     this.reviews.unshift(newRev);
+    this.recalculateProductRating(productId);
+    return newRev;
+  }
 
-    // Recalculate product rating
-    const prodReviews = this.getReviews(productId);
-    const avg =
-      prodReviews.reduce((sum, r) => sum + r.rating, 0) / (prodReviews.length || 1);
-    const prod = this.getProductById(productId);
-    if (prod) {
-      prod.rating = Number(avg.toFixed(1));
-      prod.reviewCount = prodReviews.length;
+  moderateReview(
+    reviewId: string,
+    action: 'approve' | 'reject' | 'delete'
+  ): { success: boolean; review?: Review; error?: string } {
+    const review = this.reviews.find((entry) => entry.id === reviewId);
+    if (!review) return { success: false, error: 'Review not found.' };
+
+    if (action === 'delete') {
+      this.reviews = this.reviews.filter((entry) => entry.id !== reviewId);
+      this.recalculateProductRating(review.productId);
+      return { success: true, review };
     }
 
-    return newRev;
+    review.isApproved = action === 'approve';
+    this.recalculateProductRating(review.productId);
+    return { success: true, review };
+  }
+
+  private recalculateProductRating(productId: string): void {
+    const approvedReviews = this.reviews.filter(
+      (review) => review.productId === productId && review.isApproved !== false
+    );
+    const average =
+      approvedReviews.reduce((sum, review) => sum + review.rating, 0) /
+      (approvedReviews.length || 1);
+    const product = this.getProductById(productId);
+    if (product) {
+      product.rating = approvedReviews.length ? Number(average.toFixed(1)) : 0;
+      product.reviewCount = approvedReviews.length;
+    }
   }
 
   // USERS
   getUsers(): User[] {
     return this.users;
+  }
+
+  getCustomers(): AdminCustomer[] {
+    return this.users.map((user) => {
+      const userOrders = this.orders.filter((order) => order.userId === user.id);
+      return {
+        ...user,
+        isActive: user.isActive !== false,
+        orderCount: userOrders.length,
+        lifetimeSpend: Number(
+          userOrders
+            .filter((order) => order.paymentStatus === 'Paid')
+            .reduce((sum, order) => sum + order.total, 0)
+            .toFixed(2)
+        ),
+      };
+    });
+  }
+
+  toggleUserActive(id: string, isActive: boolean): User | undefined {
+    const user = this.users.find((entry) => entry.id === id);
+    if (!user) return undefined;
+    user.isActive = isActive;
+    return user;
   }
 
   getUserById(id: string): User | undefined {
@@ -853,12 +1016,59 @@ class InMemoryStore {
       email: userData.email,
       phone: userData.phone,
       role: userData.role || 'customer',
-      avatarUrl: `https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop`,
+      avatarUrl: '/images/1534528741775-53994a69daeb.jpg',
       savedAddresses: [],
       createdAt: new Date().toISOString(),
+      isActive: true,
     };
     this.users.push(newUser);
     return newUser;
+  }
+
+  // NEWSLETTER
+  subscribeNewsletter(email: string): { success: boolean; message: string } {
+    const normalized = email.trim().toLowerCase();
+    const isValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized);
+    if (!isValid) {
+      return { success: false, message: 'Please enter a valid email address.' };
+    }
+
+    const exists = this.newsletterSubscribers.some((entry) => entry.email === normalized);
+    if (exists) {
+      return { success: true, message: 'You are already part of the Aureva Society.' };
+    }
+
+    this.newsletterSubscribers.push({
+      email: normalized,
+      subscribedAt: new Date().toISOString(),
+    });
+    return { success: true, message: 'Welcome to the Aureva Society. Watch your inbox for private drops.' };
+  }
+
+  // INVOICES
+  getInvoice(orderIdOrNumber: string): InvoiceData | undefined {
+    const order = this.getOrderById(orderIdOrNumber);
+    if (!order) return undefined;
+
+    return {
+      invoiceNumber: `INV-${order.orderNumber.replace(/^ORD-/, '')}`,
+      orderNumber: order.orderNumber,
+      issuedAt: order.createdAt,
+      gstin: '27AAACA1234A1Z5',
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      shippingAddress: order.shippingAddress,
+      items: order.items,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      couponCode: order.couponCode,
+      shippingFee: order.shippingFee,
+      tax: order.tax,
+      total: order.total,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+    };
   }
 
   // ADMIN ANALYTICS

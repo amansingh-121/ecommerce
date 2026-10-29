@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   User as UserIcon,
   Heart,
@@ -10,11 +10,16 @@ import {
   Plus,
   ShoppingBag,
   ExternalLink,
+  LayoutDashboard,
+  Edit2,
+  CheckCircle2,
+  ArrowRight,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
-import { Address } from '../types/ecommerce.ts';
+import { Address, Order } from '../types/ecommerce.ts';
 import { ProductImage } from '../components/ProductImage.tsx';
 import { formatPrice } from '../utils/currency.ts';
+import { useOverlay } from '../hooks/useOverlay.ts';
 
 export const AccountPage: React.FC = () => {
   const {
@@ -29,17 +34,22 @@ export const AccountPage: React.FC = () => {
     showToast,
     accountTab,
     setAccountTab,
+    setSelectedOrderId,
   } = useStore();
 
   const activeTab = accountTab;
+
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoadingOrders, setIsLoadingOrders] = useState(false);
 
   // Edit profile state
   const [name, setName] = useState(currentUser.name);
   const [email, setEmail] = useState(currentUser.email);
   const [phone, setPhone] = useState(currentUser.phone || '');
 
-  // Add address modal
+  // Add / edit address modal
   const [isAddAddressOpen, setIsAddAddressOpen] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
   const [newAddr, setNewAddr] = useState<Omit<Address, 'id'>>({
     fullName: currentUser.name,
     phone: currentUser.phone || '',
@@ -51,26 +61,9 @@ export const AccountPage: React.FC = () => {
     isDefault: false,
   });
 
-  const wishlistProducts = products.filter((p) => wishlistIds.includes(p.id));
-
-  const handleSaveProfile = (e: React.FormEvent) => {
-    e.preventDefault();
-    updateUserProfile({ name, email, phone });
-  };
-
-  const handleAddAddress = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newAddr.street || !newAddr.city) return;
-
-    const created: Address = {
-      ...newAddr,
-      id: `addr-${Date.now()}`,
-    };
-
-    updateUserProfile({
-      savedAddresses: [...currentUser.savedAddresses, created],
-    });
+  const closeAddressForm = () => {
     setIsAddAddressOpen(false);
+    setEditingAddressId(null);
     setNewAddr({
       fullName: currentUser.name,
       phone: currentUser.phone || '',
@@ -81,14 +74,134 @@ export const AccountPage: React.FC = () => {
       country: 'India',
       isDefault: false,
     });
-    showToast('New shipping address saved');
+  };
+
+  useOverlay(isAddAddressOpen, closeAddressForm);
+
+  useEffect(() => {
+    if (activeTab !== 'overview') return;
+
+    let cancelled = false;
+    const loadOrders = async () => {
+      setIsLoadingOrders(true);
+      try {
+        const res = await fetch(`/api/orders?userId=${currentUser.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!cancelled) setOrders(data.orders || []);
+        }
+      } catch (err) {
+        console.error('Failed to load account orders:', err);
+      } finally {
+        if (!cancelled) setIsLoadingOrders(false);
+      }
+    };
+
+    loadOrders();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, currentUser.id]);
+
+  const wishlistProducts = useMemo(
+    () => products.filter((p) => wishlistIds.includes(p.id)),
+    [products, wishlistIds]
+  );
+
+  const wishlistRecommendations = useMemo(() => {
+    const savedCategories = new Set(wishlistProducts.map((product) => product.category));
+    const pool = products.filter((product) => !wishlistIds.includes(product.id));
+    const matchingCategory = pool.filter((product) => savedCategories.has(product.category));
+    return (matchingCategory.length ? matchingCategory : pool).slice(0, 4);
+  }, [products, wishlistIds, wishlistProducts]);
+
+  const readyToShipOrders = orders.filter(
+    (order) => !['Delivered', 'Cancelled', 'Returned'].includes(order.status)
+  );
+  const deliveredOrders = orders.filter((order) => order.status === 'Delivered');
+  const lifetimeSpend = orders
+    .filter((order) => order.paymentStatus === 'Paid')
+    .reduce((sum, order) => sum + order.total, 0);
+  const recentOrders = orders.slice(0, 3);
+
+  const handleSaveProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateUserProfile({ name, email, phone });
+  };
+
+  const openNewAddress = () => {
+    setEditingAddressId(null);
+    setNewAddr({
+      fullName: currentUser.name,
+      phone: currentUser.phone || '',
+      street: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+      isDefault: currentUser.savedAddresses.length === 0,
+    });
+    setIsAddAddressOpen(true);
+  };
+
+  const openEditAddress = (address: Address) => {
+    const { id, ...rest } = address;
+    setEditingAddressId(id);
+    setNewAddr(rest);
+    setIsAddAddressOpen(true);
+  };
+
+  const handleSaveAddress = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAddr.street.trim() || !newAddr.city.trim()) {
+      showToast('Street and city are required', 'error');
+      return;
+    }
+
+    const addressId = editingAddressId || `addr-${Date.now()}`;
+    const makeDefault = Boolean(newAddr.isDefault) || currentUser.savedAddresses.length === 0;
+    const savedAddress: Address = {
+      ...newAddr,
+      id: addressId,
+      isDefault: makeDefault,
+    };
+
+    let nextAddresses = editingAddressId
+      ? currentUser.savedAddresses.map((address) =>
+          address.id === addressId ? savedAddress : address
+        )
+      : [...currentUser.savedAddresses, savedAddress];
+
+    if (makeDefault) {
+      nextAddresses = nextAddresses.map((address) => ({
+        ...address,
+        isDefault: address.id === addressId,
+      }));
+    }
+
+    updateUserProfile({ savedAddresses: nextAddresses });
+    closeAddressForm();
   };
 
   const handleDeleteAddress = (id: string) => {
-    updateUserProfile({
-      savedAddresses: currentUser.savedAddresses.filter((a) => a.id !== id),
-    });
+    let remaining = currentUser.savedAddresses.filter((address) => address.id !== id);
+    if (remaining.length > 0 && !remaining.some((address) => address.isDefault)) {
+      remaining = remaining.map((address, index) => ({
+        ...address,
+        isDefault: index === 0,
+      }));
+    }
+    updateUserProfile({ savedAddresses: remaining });
     showToast('Address removed', 'info');
+  };
+
+  const handleSetDefaultAddress = (id: string) => {
+    updateUserProfile({
+      savedAddresses: currentUser.savedAddresses.map((address) => ({
+        ...address,
+        isDefault: address.id === id,
+      })),
+    });
   };
 
   return (
@@ -127,6 +240,7 @@ export const AccountPage: React.FC = () => {
         {/* Sidebar Nav */}
         <div className="space-y-1">
           {[
+            { id: 'overview', label: 'Overview', icon: LayoutDashboard },
             { id: 'profile', label: 'Personal Information', icon: UserIcon },
             { id: 'addresses', label: 'Saved Addresses', icon: MapPin },
             { id: 'wishlist', label: `Wishlist (${wishlistIds.length})`, icon: Heart },
@@ -153,6 +267,148 @@ export const AccountPage: React.FC = () => {
 
         {/* Tab Content Panel */}
         <div className="md:col-span-3 bg-white border border-neutral-200 rounded-2xl p-6 sm:p-8 shadow-xs">
+          {/* TAB 0: OVERVIEW */}
+          {activeTab === 'overview' && (
+            <div className="space-y-7">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 font-display">
+                  Account Overview
+                </h3>
+                <p className="text-xs text-neutral-500">
+                  A snapshot of your Aureva activity, orders and lifetime value.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                {[
+                  {
+                    label: 'Total Orders',
+                    value: String(orders.length),
+                    icon: Package,
+                    tone: 'bg-neutral-100 text-neutral-800',
+                  },
+                  {
+                    label: 'In Progress',
+                    value: String(readyToShipOrders.length),
+                    icon: ArrowRight,
+                    tone: 'bg-amber-50 text-amber-700',
+                  },
+                  {
+                    label: 'Delivered',
+                    value: String(deliveredOrders.length),
+                    icon: CheckCircle2,
+                    tone: 'bg-emerald-50 text-emerald-700',
+                  },
+                  {
+                    label: 'Lifetime Spend',
+                    value: formatPrice(lifetimeSpend),
+                    icon: ShoppingBag,
+                    tone: 'bg-[#f6efe8] text-[#965b2a]',
+                  },
+                ].map((stat) => {
+                  const Icon = stat.icon;
+                  return (
+                    <div
+                      key={stat.label}
+                      className="rounded-xl border border-neutral-200 bg-white p-4"
+                    >
+                      <div
+                        className={`mb-2 flex h-8 w-8 items-center justify-center rounded-lg ${stat.tone}`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <div className="text-lg font-bold text-neutral-950 tabular-nums font-display">
+                        {stat.value}
+                      </div>
+                      <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                        {stat.label}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                    Recent Orders
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={() => setCurrentView('orders')}
+                    className="text-[11px] font-semibold text-[#965b2a] hover:underline"
+                  >
+                    View all orders
+                  </button>
+                </div>
+
+                {isLoadingOrders ? (
+                  <div className="py-6 text-center text-xs text-neutral-400">
+                    Loading your orders...
+                  </div>
+                ) : recentOrders.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-neutral-300 bg-neutral-50 p-6 text-center">
+                    <Package className="mx-auto mb-2 h-6 w-6 text-neutral-400" />
+                    <p className="text-xs text-neutral-600">
+                      You haven't placed an order yet. Explore the collection to get started.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setCurrentView('catalog')}
+                      className="mt-3 rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                    >
+                      Browse the Catalog
+                    </button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-neutral-100 rounded-xl border border-neutral-200">
+                    {recentOrders.map((order) => (
+                      <button
+                        key={order.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedOrderId(order.id);
+                          setCurrentView('orders');
+                        }}
+                        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-xs transition-colors hover:bg-neutral-50"
+                      >
+                        <div>
+                          <span className="font-mono font-bold text-neutral-900">
+                            {order.orderNumber}
+                          </span>
+                          <span className="ml-2 text-[10px] text-neutral-400">
+                            {new Date(order.createdAt).toLocaleDateString('en-IN')}
+                          </span>
+                          <div className="mt-0.5 text-[11px] text-neutral-500">
+                            {order.items.length} item{order.items.length > 1 ? 's' : ''} ·{' '}
+                            {order.paymentMethod}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`hidden sm:inline-flex rounded border px-2 py-0.5 text-[10px] font-semibold ${
+                              order.status === 'Delivered'
+                                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                                : ['Cancelled', 'Returned'].includes(order.status)
+                                ? 'border-neutral-200 bg-neutral-100 text-neutral-600'
+                                : 'border-amber-200 bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                          <span className="font-bold tabular-nums text-neutral-950">
+                            {formatPrice(order.total)}
+                          </span>
+                          <ArrowRight className="h-3.5 w-3.5 text-neutral-400" />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: PROFILE */}
           {activeTab === 'profile' && (
             <div className="space-y-6">
@@ -222,7 +478,7 @@ export const AccountPage: React.FC = () => {
                 </div>
 
                 <button
-                  onClick={() => setIsAddAddressOpen(true)}
+                  onClick={openNewAddress}
                   className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -234,17 +490,35 @@ export const AccountPage: React.FC = () => {
                 {currentUser.savedAddresses.map((addr) => (
                   <div
                     key={addr.id}
-                    className="p-4 border border-neutral-200 rounded-xl relative space-y-2 text-xs"
+                    className={`p-4 border rounded-xl relative space-y-2 text-xs ${
+                      addr.isDefault ? 'border-neutral-900/30 bg-neutral-50/60' : 'border-neutral-200'
+                    }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-neutral-900">{addr.fullName}</span>
-                      <button
-                        onClick={() => handleDeleteAddress(addr.id)}
-                        className="text-neutral-400 hover:text-rose-600 transition-colors"
-                        title="Delete address"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="font-bold text-neutral-900 truncate">{addr.fullName}</span>
+                        {addr.isDefault && (
+                          <span className="shrink-0 rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                            Default
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <button
+                          onClick={() => openEditAddress(addr)}
+                          className="text-neutral-400 hover:text-neutral-900 transition-colors"
+                          title="Edit address"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          className="text-neutral-400 hover:text-rose-600 transition-colors"
+                          title="Delete address"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="text-neutral-600 leading-relaxed">
@@ -255,26 +529,36 @@ export const AccountPage: React.FC = () => {
                       {addr.country}
                     </p>
 
-                    <div className="text-[11px] text-neutral-400 font-mono">
-                      Phone: {addr.phone}
+                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-neutral-100">
+                      <span className="text-[11px] text-neutral-400 font-mono">
+                        {addr.phone}
+                      </span>
+                      {!addr.isDefault && (
+                        <button
+                          onClick={() => handleSetDefaultAddress(addr.id)}
+                          className="text-[10px] font-semibold text-[#965b2a] hover:underline"
+                        >
+                          Set as default
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Add Address Modal */}
+              {/* Add / Edit Address Modal */}
               {isAddAddressOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                   <div
                     className="fixed inset-0 bg-neutral-900/50 backdrop-blur-xs"
-                    onClick={() => setIsAddAddressOpen(false)}
+                    onClick={closeAddressForm}
                   />
                   <div className="relative w-full max-w-md bg-white rounded-2xl p-6 shadow-2xl border border-neutral-200 space-y-4">
                     <h4 className="text-base font-bold text-neutral-900 font-display">
-                      Add New Shipping Address
+                      {editingAddressId ? 'Edit Shipping Address' : 'Add New Shipping Address'}
                     </h4>
 
-                    <form onSubmit={handleAddAddress} className="space-y-3 text-xs">
+                    <form onSubmit={handleSaveAddress} className="space-y-3 text-xs">
                       <div>
                         <label className="font-bold text-neutral-700 block mb-1">Full Name</label>
                         <input
@@ -357,10 +641,22 @@ export const AccountPage: React.FC = () => {
                         </div>
                       </div>
 
+                      <label className="flex items-center gap-2 pt-1 cursor-pointer text-xs text-neutral-700 select-none">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(newAddr.isDefault)}
+                          onChange={(e) =>
+                            setNewAddr({ ...newAddr, isDefault: e.target.checked })
+                          }
+                          className="w-4 h-4 rounded border-neutral-300"
+                        />
+                        <span>Set as default delivery address</span>
+                      </label>
+
                       <div className="flex justify-end gap-2 pt-3">
                         <button
                           type="button"
-                          onClick={() => setIsAddAddressOpen(false)}
+                          onClick={closeAddressForm}
                           className="px-4 py-2 text-neutral-600 font-semibold"
                         >
                           Cancel
@@ -369,7 +665,7 @@ export const AccountPage: React.FC = () => {
                           type="submit"
                           className="px-4 py-2 bg-neutral-900 text-white font-bold rounded-lg"
                         >
-                          Save Address
+                          {editingAddressId ? 'Update Address' : 'Save Address'}
                         </button>
                       </div>
                     </form>
@@ -444,6 +740,63 @@ export const AccountPage: React.FC = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {wishlistRecommendations.length > 0 && (
+                <div className="space-y-3 pt-6 border-t border-neutral-100">
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                      Complete Your Collection
+                    </h4>
+                    <p className="text-[11px] text-neutral-500">
+                      Picked to complement the pieces you have saved.
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {wishlistRecommendations.map((p) => (
+                      <div
+                        key={p.id}
+                        className="flex gap-3 rounded-xl border border-neutral-200 p-3"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => navigateToProduct(p.id)}
+                          className="w-16 h-16 rounded-lg bg-neutral-100 overflow-hidden shrink-0 border border-neutral-200/60"
+                        >
+                          <ProductImage
+                            src={p.thumbnail || p.images[0]}
+                            alt={p.name}
+                            aspectRatio="square"
+                          />
+                        </button>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-[9px] font-semibold uppercase tracking-wider text-neutral-400">
+                            {p.brand}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => navigateToProduct(p.id)}
+                            className="block truncate text-left text-[11px] font-bold text-neutral-900 hover:underline"
+                          >
+                            {p.name}
+                          </button>
+                          <div className="mt-0.5 flex items-center justify-between gap-2">
+                            <span className="text-[11px] font-bold tabular-nums text-neutral-900">
+                              {formatPrice(p.basePrice)}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => addToCart(p, p.variants[0], 1)}
+                              className="rounded-lg bg-neutral-900 px-2.5 py-1.5 text-[10px] font-semibold text-white hover:bg-neutral-800"
+                            >
+                              Add to Bag
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

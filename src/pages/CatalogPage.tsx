@@ -1,7 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   SlidersHorizontal,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   X,
   RotateCcw,
   Star,
@@ -9,6 +11,8 @@ import {
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
 import { ProductCard } from '../components/ProductCard.tsx';
+
+const PAGE_SIZE = 9;
 
 const SUBCATEGORIES_BY_CATEGORY: Record<string, string[]> = {
   Electronics: ['Headphones', 'Smart Watches', 'Speakers'],
@@ -34,10 +38,23 @@ export const CatalogPage: React.FC = () => {
   const [minRating, setMinRating] = useState<number>(0);
   const [inStockOnly, setInStockOnly] = useState<boolean>(false);
   const [minDiscount, setMinDiscount] = useState<number>(0);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(1);
   const [sortOption, setSortOption] = useState<
     'recommended' | 'price-asc' | 'price-desc' | 'rating' | 'newest'
   >('recommended');
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+
+  const brands = useMemo(
+    () => Array.from(new Set(products.map((product) => product.brand))).sort(),
+    [products]
+  );
+
+  const toggleBrand = (brand: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((entry) => entry !== brand) : [...prev, brand]
+    );
+  };
 
   const categoriesList = ['All Products', 'Electronics', 'Fashion', 'Home', 'Beauty', 'Sports'];
 
@@ -115,6 +132,11 @@ export const CatalogPage: React.FC = () => {
       );
     }
 
+    // Brand
+    if (selectedBrands.length > 0) {
+      result = result.filter((p) => selectedBrands.includes(p.brand));
+    }
+
     // Price Filters
     const minVal = minPriceInput ? parseFloat(minPriceInput) : null;
     const maxVal = maxPriceInput ? parseFloat(maxPriceInput) : null;
@@ -168,6 +190,7 @@ export const CatalogPage: React.FC = () => {
     searchQuery,
     selectedCategory,
     selectedSubcategory,
+    selectedBrands,
     minPriceInput,
     maxPriceInput,
     minRating,
@@ -176,9 +199,36 @@ export const CatalogPage: React.FC = () => {
     sortOption,
   ]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageStart = (safePage - 1) * PAGE_SIZE;
+  const paginatedProducts = filteredProducts.slice(pageStart, pageStart + PAGE_SIZE);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedSubcategory,
+    selectedBrands,
+    minPriceInput,
+    maxPriceInput,
+    minRating,
+    inStockOnly,
+    minDiscount,
+    sortOption,
+  ]);
+
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(totalPages, page)));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const resetFilters = () => {
     setSelectedCategory('all');
     setSelectedSubcategory('all');
+    setSelectedBrands([]);
+    setCurrentPage(1);
     setMinPriceInput('');
     setMaxPriceInput('');
     setMinRating(0);
@@ -191,6 +241,7 @@ export const CatalogPage: React.FC = () => {
   const hasActiveFilters =
     selectedCategory !== 'all' ||
     selectedSubcategory !== 'all' ||
+    selectedBrands.length > 0 ||
     Boolean(minPriceInput) ||
     Boolean(maxPriceInput) ||
     minRating > 0 ||
@@ -254,6 +305,47 @@ export const CatalogPage: React.FC = () => {
                 >
                   <span>{subcat}</span>
                   {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-neutral-900" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 1.75 BRAND */}
+      {brands.length > 0 && (
+        <div className="space-y-3 pt-4 border-t border-neutral-100">
+          <h4 className="text-[11px] font-mono font-bold tracking-widest text-[#c2834f] uppercase">
+            BRAND
+          </h4>
+          <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+            {brands.map((brand) => {
+              const isSelected = selectedBrands.includes(brand);
+              const count = products.filter((p) => p.brand === brand).length;
+              return (
+                <button
+                  key={brand}
+                  type="button"
+                  onClick={() => toggleBrand(brand)}
+                  className={`w-full text-left py-1 text-xs transition-colors flex items-center justify-between cursor-pointer ${
+                    isSelected
+                      ? 'font-bold text-neutral-950 text-sm'
+                      : 'text-neutral-600 hover:text-neutral-950 font-normal'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={`w-3.5 h-3.5 rounded border flex items-center justify-center ${
+                        isSelected
+                          ? 'bg-neutral-900 border-neutral-900 text-white'
+                          : 'border-neutral-300 bg-white'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-2.5 h-2.5" />}
+                    </span>
+                    <span>{brand}</span>
+                  </span>
+                  <span className="text-[10px] text-neutral-400 tabular-nums">({count})</span>
                 </button>
               );
             })}
@@ -491,7 +583,12 @@ export const CatalogPage: React.FC = () => {
             {selectedCategory === 'all' ? 'All Products' : selectedCategory}
           </h1>
           <p className="text-xs text-neutral-500 mt-1">
-            Showing {filteredProducts.length} of {products.length} products
+            {filteredProducts.length === 0
+              ? 'No products match your filters'
+              : `Showing ${pageStart + 1}–${Math.min(
+                  pageStart + PAGE_SIZE,
+                  filteredProducts.length
+                )} of ${filteredProducts.length} products`}
           </p>
         </div>
 
@@ -535,11 +632,51 @@ export const CatalogPage: React.FC = () => {
         {/* Product Grid Area */}
         <main className="lg:col-span-9">
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 transition-opacity duration-200">
-              {filteredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 transition-opacity duration-200">
+                {paginatedProducts.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-1.5 pt-10">
+                  <button
+                    type="button"
+                    onClick={() => goToPage(safePage - 1)}
+                    disabled={safePage === 1}
+                    className="px-3 py-2 rounded-lg border border-neutral-200 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Previous</span>
+                  </button>
+                  {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => goToPage(page)}
+                      aria-current={page === safePage ? 'page' : undefined}
+                      className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
+                        page === safePage
+                          ? 'bg-neutral-900 text-white'
+                          : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => goToPage(safePage + 1)}
+                    disabled={safePage === totalPages}
+                    className="px-3 py-2 rounded-lg border border-neutral-200 text-xs font-semibold text-neutral-700 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40 flex items-center gap-1"
+                  >
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+            </>
           ) : (
             <div className="p-12 text-center rounded-2xl bg-white border border-dashed border-neutral-300 space-y-3">
               <h3 className="text-base font-serif font-bold text-neutral-800">

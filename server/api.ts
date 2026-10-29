@@ -25,6 +25,10 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     return res.json({ user: created, token: `jwt-demo-${created.id}` });
   }
 
+  if (user.isActive === false) {
+    return res.status(403).json({ error: 'This account has been deactivated. Contact Aureva care.' });
+  }
+
   return res.json({ user, token: `jwt-demo-${user.id}` });
 });
 
@@ -119,6 +123,10 @@ apiRouter.get('/categories', (_req: Request, res: Response) => {
 // COUPON VALIDATION
 // ----------------------------------------------------
 
+apiRouter.get('/coupons/active', (_req: Request, res: Response) => {
+  return res.json({ coupons: dbStore.getActiveCoupons() });
+});
+
 apiRouter.post('/coupons/validate', (req: Request, res: Response) => {
   const { code, subtotal } = req.body;
   if (!code) {
@@ -212,6 +220,14 @@ apiRouter.get('/orders/:id', (req: Request, res: Response) => {
   return res.json({ order });
 });
 
+apiRouter.get('/orders/:id/invoice', (req: Request, res: Response) => {
+  const invoice = dbStore.getInvoice(req.params.id);
+  if (!invoice) {
+    return res.status(404).json({ error: 'Order not found' });
+  }
+  return res.json({ invoice });
+});
+
 apiRouter.patch('/orders/:id/status', (req: Request, res: Response) => {
   const { status, note } = req.body;
   if (!status) {
@@ -270,6 +286,27 @@ apiRouter.post('/products/:id/reviews', (req: Request, res: Response) => {
   return res.status(201).json({ review: newReview });
 });
 
+apiRouter.get('/reviews/featured', (_req: Request, res: Response) => {
+  return res.json({ reviews: dbStore.getFeaturedReviews(4) });
+});
+
+// ----------------------------------------------------
+// NEWSLETTER
+// ----------------------------------------------------
+
+apiRouter.post('/newsletter/subscribe', (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email || typeof email !== 'string') {
+    return res.status(400).json({ error: 'Email address is required.' });
+  }
+
+  const result = dbStore.subscribeNewsletter(email);
+  if (!result.success) {
+    return res.status(400).json({ error: result.message });
+  }
+  return res.status(201).json({ message: result.message });
+});
+
 // ----------------------------------------------------
 // ADMIN SUITE ENDPOINTS
 // ----------------------------------------------------
@@ -317,8 +354,103 @@ apiRouter.post('/admin/coupons', (req: Request, res: Response) => {
   return res.status(201).json({ coupon: created });
 });
 
+apiRouter.put('/admin/coupons/:code', (req: Request, res: Response) => {
+  const updated = dbStore.updateCoupon(req.params.code, req.body);
+  if (!updated) {
+    return res.status(404).json({ error: 'Coupon not found' });
+  }
+  return res.json({ coupon: updated });
+});
+
+apiRouter.delete('/admin/coupons/:code', (req: Request, res: Response) => {
+  const deleted = dbStore.deleteCoupon(req.params.code);
+  if (!deleted) {
+    return res.status(404).json({ error: 'Coupon not found' });
+  }
+  return res.json({ success: true });
+});
+
 apiRouter.get('/admin/customers', (_req: Request, res: Response) => {
-  return res.json({ customers: dbStore.getUsers() });
+  return res.json({ customers: dbStore.getCustomers() });
+});
+
+apiRouter.put('/admin/customers/:id/toggle', (req: Request, res: Response) => {
+  const { isActive } = req.body;
+  if (typeof isActive !== 'boolean') {
+    return res.status(400).json({ error: 'isActive must be a boolean' });
+  }
+  const user = dbStore.toggleUserActive(req.params.id, isActive);
+  if (!user) {
+    return res.status(404).json({ error: 'Customer not found' });
+  }
+  return res.json({ user });
+});
+
+// ----------------------------------------------------
+// ADMIN CATEGORY & REVIEW MANAGEMENT
+// ----------------------------------------------------
+
+apiRouter.post('/admin/categories', (req: Request, res: Response) => {
+  const { name, description, imageUrl, subcategories } = req.body;
+  if (!name || typeof name !== 'string') {
+    return res.status(400).json({ error: 'Category name is required' });
+  }
+
+  const slug = name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)+/g, '');
+
+  const created = dbStore.createCategory({
+    name,
+    slug,
+    description: description || '',
+    imageUrl: imageUrl || undefined,
+    productCount: 0,
+    subcategories: Array.isArray(subcategories) ? subcategories : [],
+  });
+  return res.status(201).json({ category: created });
+});
+
+apiRouter.put('/admin/categories/:id', (req: Request, res: Response) => {
+  const updates = { ...req.body };
+  if (updates.name) {
+    updates.slug = String(updates.name)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)+/g, '');
+  }
+  const updated = dbStore.updateCategory(req.params.id, updates);
+  if (!updated) {
+    return res.status(404).json({ error: 'Category not found' });
+  }
+  return res.json({ category: updated });
+});
+
+apiRouter.delete('/admin/categories/:id', (req: Request, res: Response) => {
+  const result = dbStore.deleteCategory(req.params.id);
+  if (!result.success) {
+    return res.status(400).json({ error: result.error || 'Failed to delete category' });
+  }
+  return res.json({ success: true });
+});
+
+apiRouter.get('/admin/reviews', (_req: Request, res: Response) => {
+  const reviews = dbStore.getAllReviews();
+  return res.json({ reviews, count: reviews.length });
+});
+
+apiRouter.post('/admin/reviews/:id/moderate', (req: Request, res: Response) => {
+  const action = req.query.action || req.body.action;
+  if (!['approve', 'reject', 'delete'].includes(String(action))) {
+    return res.status(400).json({ error: 'Action must be approve, reject or delete' });
+  }
+
+  const result = dbStore.moderateReview(req.params.id, action as 'approve' | 'reject' | 'delete');
+  if (!result.success) {
+    return res.status(404).json({ error: result.error || 'Review not found' });
+  }
+  return res.json({ review: result.review });
 });
 
 // ----------------------------------------------------

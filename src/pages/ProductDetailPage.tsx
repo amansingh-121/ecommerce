@@ -42,6 +42,7 @@ export const ProductDetailPage: React.FC = () => {
   );
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [recentProducts, setRecentProducts] = useState<Product[]>([]);
   const [reviewSummary, setReviewSummary] = useState<{
     pros: string[];
     cons: string[];
@@ -68,6 +69,32 @@ export const ProductDetailPage: React.FC = () => {
       fetchReviewSummary(product.id);
     }
   }, [product?.id]);
+
+  useEffect(() => {
+    if (!product) {
+      setRecentProducts([]);
+      return;
+    }
+
+    try {
+      const raw = JSON.parse(localStorage.getItem('aureva_recently_viewed') || '[]');
+      const stored = Array.isArray(raw)
+        ? raw.filter((entry): entry is string => typeof entry === 'string')
+        : [];
+      const slug = product.slug || product.id;
+      const next = [slug, ...stored.filter((entry) => entry !== slug)].slice(0, 8);
+      localStorage.setItem('aureva_recently_viewed', JSON.stringify(next));
+
+      const resolved = next
+        .map((entry) =>
+          products.find((candidate) => candidate.slug === entry || candidate.id === entry)
+        )
+        .filter((candidate): candidate is Product => Boolean(candidate));
+      setRecentProducts(resolved);
+    } catch (err) {
+      console.warn('Could not update recently viewed products:', err);
+    }
+  }, [product?.id, products]);
 
   const fetchReviews = async (pId: string) => {
     try {
@@ -151,6 +178,9 @@ export const ProductDetailPage: React.FC = () => {
   const images = product.images.length > 0 ? product.images : [product.thumbnail];
   const relatedProducts = products
     .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
+  const recentlyViewed = recentProducts
+    .filter((candidate) => candidate.id !== product.id)
     .slice(0, 4);
 
   const handleBuyNow = () => {
@@ -572,6 +602,34 @@ export const ProductDetailPage: React.FC = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {relatedProducts.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Recently Viewed Section */}
+        {recentlyViewed.length > 0 && (
+          <div className="pt-12 border-t border-neutral-200 space-y-6">
+            <div className="flex items-end justify-between gap-4">
+              <div>
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#965b2a] block mb-1">
+                  Your Trail
+                </span>
+                <h3 className="text-xl font-bold text-neutral-900 font-display">
+                  Recently Viewed
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCurrentView('catalog')}
+                className="text-xs font-semibold text-[#965b2a] hover:underline"
+              >
+                Browse all
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentlyViewed.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
             </div>

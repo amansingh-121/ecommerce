@@ -6,6 +6,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Electronics',
     slug: 'electronics',
     description: 'Precision acoustic hardware, smart timepieces, and wireless audio devices.',
+    imageUrl: '/images/1505740420928-5e560c06d30e.jpg',
     productCount: 6,
     subcategories: ['Headphones', 'Smart Watches', 'Speakers'],
   },
@@ -14,6 +15,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Fashion',
     slug: 'fashion',
     description: 'Tailored luxury outerwear, artisan leather bags, and acetate eyewear.',
+    imageUrl: '/images/1515886657613-9f3515b0c78f.jpg',
     productCount: 7,
     subcategories: ['Bags & Totes', 'Apparel', 'Eyewear'],
   },
@@ -22,6 +24,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Home',
     slug: 'home',
     description: 'Architectural ceramic donut vases, poured botanical candles, and natural stone.',
+    imageUrl: '/images/1507473885765-e6ed057f782c.jpg',
     productCount: 5,
     subcategories: ['Vases & Planters', 'Candles', 'Tableware'],
   },
@@ -30,6 +33,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Beauty',
     slug: 'beauty',
     description: 'Botanical night recovery elixirs, bespoke parfum, and sculpted jade rituals.',
+    imageUrl: '/images/1596462502278-27bfdc403348.jpg',
     productCount: 4,
     subcategories: ['Skincare', 'Fragrance', 'Rituals'],
   },
@@ -38,6 +42,7 @@ export const INITIAL_CATEGORIES: Category[] = [
     name: 'Sports',
     slug: 'sports',
     description: 'Natural cork yoga mats, responsive running shoes, and cast iron strength gear.',
+    imageUrl: '/images/1622279457486-62dcc4a431d6.jpg',
     productCount: 5,
     subcategories: ['Yoga', 'Strength'],
   },
@@ -65,10 +70,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?q=80&w=800&auto=format&fit=crop',
+      '/images/1590658268037-6bf12165a8df.jpg',
+      '/images/1572536147248-ac59a8abfa4b.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1590658268037-6bf12165a8df.jpg',
     variants: [
       { id: 'var-e1-1', name: 'Matte Obsidian', sku: 'AUR-EAR-BLK', color: 'Matte Obsidian', colorHex: '#18181b', priceModifier: 0, stock: 20 },
       { id: 'var-e1-2', name: 'Raw White', sku: 'AUR-EAR-WHT', color: 'Raw White', colorHex: '#f8fafc', priceModifier: 0, stock: 14 },
@@ -101,10 +106,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=800&auto=format&fit=crop',
+      '/images/1579586337278-3befd40fd17a.jpg',
+      '/images/1508685096489-7aacd43bd3b1.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1579586337278-3befd40fd17a.jpg',
     variants: [
       { id: 'var-e2-1', name: 'Graphite Black', sku: 'CHR-FIT-BLK', color: 'Graphite Black', colorHex: '#27272a', priceModifier: 0, stock: 15 },
       { id: 'var-e2-2', name: 'Frost Mint', sku: 'CHR-FIT-MNT', color: 'Frost Mint', colorHex: '#a7f3d0', priceModifier: 0, stock: 10 },
@@ -137,10 +142,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1524805444758-089113d48a6d?q=80&w=800&auto=format&fit=crop',
+      '/images/1523275335684-37898b6baf30.jpg',
+      '/images/1524805444758-089113d48a6d.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1523275335684-37898b6baf30.jpg',
     variants: [
       { id: 'var-e3-1', name: 'Brushed Silver 41mm', sku: 'CHR-AUT-SLV', color: 'Silver', colorHex: '#e2e8f0', size: '41mm', priceModifier: 0, stock: 10 },
       { id: 'var-e3-2', name: 'Stealth Black 41mm', sku: 'CHR-AUT-BLK', color: 'Black', colorHex: '#0f172a', size: '41mm', priceModifier: 0, stock: 8 },
@@ -172,10 +177,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?q=80&w=800&auto=format&fit=crop',
+      '/images/1508685096489-7aacd43bd3b1.jpg',
+      '/images/1579586337278-3befd40fd17a.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1508685096489-7aacd43bd3b1.jpg',
     variants: [
       { id: 'var-e4-1', name: 'Titanium Grey', sku: 'CHR-APX-GRY', color: 'Titanium Grey', colorHex: '#64748b', priceModifier: 0, stock: 12 },
       { id: 'var-e4-2', name: 'Deep Midnight', sku: 'CHR-APX-MID', color: 'Midnight', colorHex: '#1e293b', priceModifier: 0, stock: 8 },
@@ -207,10 +212,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1484704849700-f032a568e944?q=80&w=800&auto=format&fit=crop',
+      '/images/1505740420928-5e560c06d30e.jpg',
+      '/images/1484704849700-f032a568e944.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1505740420928-5e560c06d30e.jpg',
     variants: [
       { id: 'var-e5-1', name: 'Matte Charcoal', sku: 'AUR-HDP-CHR', color: 'Charcoal', colorHex: '#18181b', priceModifier: 0, stock: 14 },
       { id: 'var-e5-2', name: 'Silver Mist', sku: 'AUR-HDP-SLV', color: 'Silver', colorHex: '#cbd5e1', priceModifier: 0, stock: 8 },
@@ -242,10 +247,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=800&auto=format&fit=crop',
+      '/images/1546435770-a3e426bf472b.jpg',
+      '/images/1505740420928-5e560c06d30e.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1546435770-a3e426bf472b.jpg',
     variants: [
       { id: 'var-e6-1', name: 'Walnut & Saddle Leather', sku: 'AUR-WLN-BRN', color: 'Walnut Brown', colorHex: '#78350f', priceModifier: 0, stock: 15 },
     ],
@@ -278,10 +283,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=800&auto=format&fit=crop',
+      '/images/1515886657613-9f3515b0c78f.jpg',
+      '/images/1539109136881-3be0616acf4b.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1515886657613-9f3515b0c78f.jpg',
     variants: [
       { id: 'var-f1-1', name: 'Pure White / S', sku: 'AUR-SHT-WHT-S', color: 'White', colorHex: '#ffffff', size: 'S', priceModifier: 0, stock: 10 },
       { id: 'var-f1-2', name: 'Pure White / M', sku: 'AUR-SHT-WHT-M', color: 'White', colorHex: '#ffffff', size: 'M', priceModifier: 0, stock: 12 },
@@ -314,10 +319,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?q=80&w=800&auto=format&fit=crop',
+      '/images/1584917865442-de89df76afd3.jpg',
+      '/images/1566150905458-1bf1fc113f0d.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1584917865442-de89df76afd3.jpg',
     variants: [
       { id: 'var-f2-1', name: 'Trench Taupe', sku: 'MSN-BAG-TPE', color: 'Taupe', colorHex: '#d6d3d1', priceModifier: 0, stock: 10 },
       { id: 'var-f2-2', name: 'Noir Black', sku: 'MSN-BAG-NOIR', color: 'Noir', colorHex: '#18181b', priceModifier: 0, stock: 6 },
@@ -349,10 +354,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
+      '/images/1566150905458-1bf1fc113f0d.jpg',
+      '/images/1584917865442-de89df76afd3.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1566150905458-1bf1fc113f0d.jpg',
     variants: [
       { id: 'var-f3-1', name: 'Deep Azure Emerald', sku: 'CRT-SAT-AZR', color: 'Azure Emerald', colorHex: '#0f766e', priceModifier: 0, stock: 12 },
     ],
@@ -383,10 +388,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',
+      '/images/1525966222134-fcfa99b8ae77.jpg',
+      '/images/1542291026-7eec264c27ff.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1525966222134-fcfa99b8ae77?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1525966222134-fcfa99b8ae77.jpg',
     variants: [
       { id: 'var-f4-1', name: 'Optic White / 41 EU', sku: 'AUR-SNK-WHT-41', color: 'White', colorHex: '#f8fafc', size: '41 EU', priceModifier: 0, stock: 8 },
       { id: 'var-f4-2', name: 'Optic White / 42 EU', sku: 'AUR-SNK-WHT-42', color: 'White', colorHex: '#f8fafc', size: '42 EU', priceModifier: 0, stock: 12 },
@@ -419,10 +424,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1584917865442-de89df76afd3?q=80&w=800&auto=format&fit=crop',
+      '/images/1590874103328-eac38a683ce7.jpg',
+      '/images/1584917865442-de89df76afd3.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1590874103328-eac38a683ce7?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1590874103328-eac38a683ce7.jpg',
     variants: [
       { id: 'var-f5-1', name: 'Noir Pebbled', sku: 'MSN-BRL-NOIR', color: 'Noir', colorHex: '#18181b', priceModifier: 0, stock: 14 },
     ],
@@ -453,10 +458,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=800&auto=format&fit=crop',
+      '/images/1539109136881-3be0616acf4b.jpg',
+      '/images/1515886657613-9f3515b0c78f.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1539109136881-3be0616acf4b.jpg',
     variants: [
       { id: 'var-f6-1', name: 'Heritage Charcoal / M', sku: 'AUR-TRN-CHR-M', color: 'Charcoal', colorHex: '#334155', size: 'M', priceModifier: 0, stock: 10 },
       { id: 'var-f6-2', name: 'Classic Khaki / L', sku: 'AUR-TRN-KHK-L', color: 'Khaki', colorHex: '#d6c7b2', size: 'L', priceModifier: 0, stock: 8 },
@@ -488,9 +493,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=800&auto=format&fit=crop',
+      '/images/1511499767150-a48a237f0083.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1511499767150-a48a237f0083.jpg',
     variants: [
       { id: 'var-f7-1', name: 'Havana Tortoise', sku: 'LUM-EYE-TOR', color: 'Tortoise', colorHex: '#78350f', priceModifier: 0, stock: 20 },
     ],
@@ -523,10 +528,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=800&auto=format&fit=crop',
+      '/images/1612196808214-b8e1d6145a8c.jpg',
+      '/images/1578749556568-bc2c40e68b61.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1612196808214-b8e1d6145a8c.jpg',
     variants: [
       { id: 'var-h1-1', name: 'Raw Sandstone 22cm', sku: 'TER-DON-SND', color: 'Sandstone', colorHex: '#e2d9cc', size: '22cm', priceModifier: 0, stock: 14 },
       { id: 'var-h1-2', name: 'Matte Charcoal 22cm', sku: 'TER-DON-CHR', color: 'Charcoal', colorHex: '#27272a', size: '22cm', priceModifier: 0, stock: 8 },
@@ -558,10 +563,10 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=800&auto=format&fit=crop',
-      'https://images.unsplash.com/photo-1612196808214-b8e1d6145a8c?q=80&w=800&auto=format&fit=crop',
+      '/images/1578749556568-bc2c40e68b61.jpg',
+      '/images/1612196808214-b8e1d6145a8c.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1578749556568-bc2c40e68b61?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1578749556568-bc2c40e68b61.jpg',
     variants: [
       { id: 'var-h2-1', name: 'Alabaster Chalk (Set of 2)', sku: 'TER-TWN-SET', color: 'Alabaster', colorHex: '#f1f5f9', priceModifier: 0, stock: 18 },
     ],
@@ -592,9 +597,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?q=80&w=800&auto=format&fit=crop',
+      '/images/1581783342308-f792dbdd27c5.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1581783342308-f792dbdd27c5?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1581783342308-f792dbdd27c5.jpg',
     variants: [
       { id: 'var-h3-1', name: 'Warm Amber & Terrazzo', sku: 'TER-AMB-TRZ', color: 'Amber', colorHex: '#b45309', priceModifier: 0, stock: 15 },
     ],
@@ -625,9 +630,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1603006905003-be475563bc59?q=80&w=800&auto=format&fit=crop',
+      '/images/1603006905003-be475563bc59.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1603006905003-be475563bc59?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1603006905003-be475563bc59.jpg',
     variants: [
       { id: 'var-h4-1', name: 'Smoked Sandalwood 300g', sku: 'AUR-CND-SAN-300', color: 'Ivory', colorHex: '#fafaf9', size: '300g', priceModifier: 0, stock: 40 },
     ],
@@ -658,9 +663,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800&auto=format&fit=crop',
+      '/images/1507473885765-e6ed057f782c.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1507473885765-e6ed057f782c.jpg',
     variants: [
       { id: 'var-h5-1', name: 'Roman Travertine 35cm', sku: 'TER-TRV-SLB', color: 'Travertine', colorHex: '#e5e5e5', size: '35cm', priceModifier: 0, stock: 16 },
     ],
@@ -693,9 +698,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1608248597359-5483259e8f46?q=80&w=800&auto=format&fit=crop',
+      '/images/1556228578-8c89e6adf883.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1608248597359-5483259e8f46?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1556228578-8c89e6adf883.jpg',
     variants: [
       { id: 'var-b1-1', name: 'Glass Dropper 50ml', sku: 'AUR-ELX-50', color: 'Botanical Indigo', colorHex: '#3b82f6', size: '50ml', priceModifier: 0, stock: 25 },
     ],
@@ -726,9 +731,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop',
+      '/images/1592945403244-b3fbafd7f539.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1592945403244-b3fbafd7f539.jpg',
     variants: [
       { id: 'var-b2-1', name: 'Heavy Crystal Flacon 100ml', sku: 'MSN-PRF-100', color: 'Amber Flacon', colorHex: '#b45309', size: '100ml', priceModifier: 0, stock: 18 },
     ],
@@ -759,9 +764,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?q=80&w=800&auto=format&fit=crop',
+      '/images/1616683693504-3ea7e9ad6fec.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1616683693504-3ea7e9ad6fec?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1616683693504-3ea7e9ad6fec.jpg',
     variants: [
       { id: 'var-b3-1', name: 'Certified Grade-A Jade', sku: 'RIT-GUA-SET', color: 'Natural Jade Green', colorHex: '#86efac', priceModifier: 0, stock: 30 },
     ],
@@ -792,9 +797,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop',
+      '/images/1556228720-195a672e8a03.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1556228720-195a672e8a03.jpg',
     variants: [
       { id: 'var-b4-1', name: 'Glass Atomizer 120ml', sku: 'AUR-MST-120', color: 'Rose Pink', colorHex: '#fbcfe8', size: '120ml', priceModifier: 0, stock: 35 },
     ],
@@ -827,9 +832,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=800&auto=format&fit=crop',
+      '/images/1601925260368-ae2f83cf8b7f.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1601925260368-ae2f83cf8b7f?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1601925260368-ae2f83cf8b7f.jpg',
     variants: [
       { id: 'var-s1-1', name: 'Natural Cork & Obsidian Black', sku: 'ZEN-YOG-CRK', color: 'Natural Cork', colorHex: '#d97706', priceModifier: 0, stock: 25 },
     ],
@@ -860,9 +865,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',
+      '/images/1542291026-7eec264c27ff.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1542291026-7eec264c27ff.jpg',
     variants: [
       { id: 'var-s2-1', name: 'Cool Grey / 41 EU', sku: 'ZEN-RUN-GRY-41', color: 'Grey', colorHex: '#94a3b8', size: '41 EU', priceModifier: 0, stock: 8 },
       { id: 'var-s2-2', name: 'Cool Grey / 42 EU', sku: 'ZEN-RUN-GRY-42', color: 'Grey', colorHex: '#94a3b8', size: '42 EU', priceModifier: 0, stock: 12 },
@@ -894,9 +899,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=800&auto=format&fit=crop',
+      '/images/1518611012118-696072aa579a.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1518611012118-696072aa579a.jpg',
     variants: [
       { id: 'var-s3-1', name: 'Magenta Berry & Strap', sku: 'ZEN-BLK-MGN', color: 'Berry Magenta', colorHex: '#db2777', priceModifier: 0, stock: 30 },
     ],
@@ -927,9 +932,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isNewArrival: false,
     images: [
-      'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?q=80&w=800&auto=format&fit=crop',
+      '/images/1584735935682-2f2b69dff9d2.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1584735935682-2f2b69dff9d2?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1584735935682-2f2b69dff9d2.jpg',
     variants: [
       { id: 'var-s4-1', name: 'Pair (5kg each)', sku: 'TTN-DMB-5KG', color: 'Matte Black', colorHex: '#18181b', size: '5kg x 2', priceModifier: 0, stock: 24 },
     ],
@@ -960,9 +965,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isNewArrival: true,
     images: [
-      'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?q=80&w=800&auto=format&fit=crop',
+      '/images/1538805060514-97d9cc17730c.jpg',
     ],
-    thumbnail: 'https://images.unsplash.com/photo-1538805060514-97d9cc17730c?q=80&w=800&auto=format&fit=crop',
+    thumbnail: '/images/1538805060514-97d9cc17730c.jpg',
     variants: [
       { id: 'var-s5-1', name: 'Aircraft Red Cable', sku: 'TTN-JMP-RED', color: 'Crimson Red', colorHex: '#ef4444', priceModifier: 0, stock: 35 },
     ],

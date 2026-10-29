@@ -35,22 +35,37 @@ export const CheckoutPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<1 | 2 | 3 | 4>(1);
 
   // Address form
-  const defaultAddr = currentUser.savedAddresses[0] || {
-    id: 'addr-new',
-    fullName: currentUser.name || 'Alex Thorne',
-    phone: currentUser.phone || '+91 98200 12345',
-    street: 'Bandra Kurla Complex, Unit 1204',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    postalCode: '400051',
-    country: 'India',
-  };
+  const defaultAddr =
+    currentUser.savedAddresses.find((address) => address.isDefault) ||
+    currentUser.savedAddresses[0] || {
+      id: 'addr-new',
+      fullName: currentUser.name || 'Alex Thorne',
+      phone: currentUser.phone || '+91 98200 12345',
+      street: 'Bandra Kurla Complex, Unit 1204',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      postalCode: '400051',
+      country: 'India',
+    };
 
   const [shippingAddress, setShippingAddress] = useState<Address>(defaultAddr);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('Credit / Debit Card');
   const [couponInput, setCouponInput] = useState('');
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
+
+  const handleUseNewAddress = () => {
+    setShippingAddress({
+      id: `addr-${Date.now()}`,
+      fullName: currentUser.name || '',
+      phone: currentUser.phone || '',
+      street: '',
+      city: '',
+      state: '',
+      postalCode: '',
+      country: 'India',
+    });
+  };
 
   // Card details state
   const [cardNumber, setCardNumber] = useState('•••• •••• •••• 4242');
@@ -211,6 +226,61 @@ export const CheckoutPage: React.FC = () => {
                   Enter destination coordinates for your priority dispatch.
                 </p>
               </div>
+
+              {currentUser.savedAddresses.length > 0 && (
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                      Saved Addresses
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleUseNewAddress}
+                      className="text-[11px] font-semibold text-[#965b2a] hover:underline"
+                    >
+                      + Use a new address
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    {currentUser.savedAddresses.map((address) => {
+                      const isSelected = shippingAddress.id === address.id;
+                      return (
+                        <button
+                          key={address.id}
+                          type="button"
+                          onClick={() => setShippingAddress(address)}
+                          className={`relative rounded-xl border p-3.5 text-left text-xs transition-all ${
+                            isSelected
+                              ? 'border-neutral-900 bg-neutral-50 ring-1 ring-neutral-900'
+                              : 'border-neutral-200 bg-white hover:border-neutral-300'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-bold text-neutral-900">{address.fullName}</span>
+                            {address.isDefault && (
+                              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-emerald-700">
+                                Default
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+                            {address.street}, {address.city}, {address.state} {address.postalCode}
+                          </p>
+                          <div className="mt-1.5 flex items-center gap-1.5 text-[10px] text-neutral-400">
+                            <MapPin className="h-3 w-3" />
+                            <span>{address.phone}</span>
+                          </div>
+                          {isSelected && (
+                            <span className="absolute right-3 bottom-3 flex h-4 w-4 items-center justify-center rounded-full bg-neutral-900 text-white">
+                              <Check className="h-2.5 w-2.5" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div>

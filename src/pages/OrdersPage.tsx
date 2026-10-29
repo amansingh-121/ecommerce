@@ -10,12 +10,40 @@ import {
   FileText,
   AlertCircle,
   ExternalLink,
+  Download,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
-import { Order, OrderStatus } from '../types/ecommerce.ts';
+import { InvoiceData, Order, OrderStatus } from '../types/ecommerce.ts';
 import { ProductImage } from '../components/ProductImage.tsx';
 import { formatPrice } from '../utils/currency.ts';
 import { useOverlay } from '../hooks/useOverlay.ts';
+
+type OrderFilter = 'all' | 'active' | 'delivered' | 'cancelled';
+
+const ACTIVE_ORDER_STATUSES: OrderStatus[] = [
+  'Pending',
+  'Confirmed',
+  'Processing',
+  'Shipped',
+  'Out for Delivery',
+];
+
+function escapeHtml(value: string | number | undefined | null): string {
+  return String(value ?? '').replace(/[&<>"']/g, (character) => {
+    switch (character) {
+      case '&':
+        return '&amp;';
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '"':
+        return '&quot;';
+      default:
+        return '&#39;';
+    }
+  });
+}
 
 export const OrdersPage: React.FC = () => {
   const {
@@ -32,6 +60,8 @@ export const OrdersPage: React.FC = () => {
   const [cancelModalOpen, setCancelModalOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<OrderFilter>('all');
+  const [downloadingInvoiceId, setDownloadingInvoiceId] = useState<string | null>(null);
 
   const closeOrderModal = () => {
     setActiveOrderModal(null);
@@ -133,6 +163,184 @@ export const OrdersPage: React.FC = () => {
     }
   };
 
+  const handleDownloadInvoice = async (order: Order) => {
+    setDownloadingInvoiceId(order.id);
+    try {
+      const res = await fetch(`/api/orders/${order.id}/invoice`);
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Invoice is unavailable.');
+      }
+
+      const invoice = data.invoice as InvoiceData;
+      const address = invoice.shippingAddress;
+      const itemRows = invoice.items
+        .map(
+          (item) => `
+            <tr>
+              <td>
+                <strong>${escapeHtml(item.productName)}</strong>
+                ${
+                  item.variantName
+                    ? `<span class="muted">${escapeHtml(item.variantName)}</span>`
+                    : ''
+                }
+              </td>
+              <td class="right">${item.quantity}</td>
+              <td class="right">${formatPrice(item.unitPrice)}</td>
+              <td class="right">${formatPrice(item.subtotal)}</td>
+            </tr>`
+        )
+        .join('');
+
+      const invoiceHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(invoice.invoiceNumber)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif; margin: 0; padding: 40px; color: #171717; background: #ffffff; }
+    .header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; }
+    h1 { margin: 0; font-size: 26px; letter-spacing: 0.18em; }
+    h2 { margin: 0 0 6px; font-size: 16px; text-transform: uppercase; letter-spacing: 0.12em; }
+    .muted { display: block; margin-top: 2px; color: #737373; font-size: 11px; }
+    .meta { margin-top: 6px; font-size: 11px; line-height: 1.6; color: #525252; }
+    .rule { border: 0; border-top: 1px solid #e5e5e5; margin: 24px 0; }
+    .grid { display: flex; gap: 48px; font-size: 11px; line-height: 1.7; }
+    .grid > div { flex: 1; }
+    .label { color: #737373; text-transform: uppercase; letter-spacing: 0.08em; font-size: 10px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 24px; font-size: 11px; }
+    th { text-align: left; background: #f5f5f5; padding: 9px 10px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: #525252; }
+    td { padding: 10px; border-bottom: 1px solid #ededed; vertical-align: top; }
+    .right { text-align: right; }
+    .totals { width: 300px; margin-left: auto; margin-top: 18px; font-size: 11px; }
+    .totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+    .totals .grand { border-top: 1px solid #d4d4d4; margin-top: 6px; padding-top: 8px; font-size: 14px; font-weight: 700; }
+    .footer { margin-top: 36px; font-size: 10px; color: #737373; line-height: 1.7; }
+    @media print { body { padding: 20px; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1>AUREVA</h1>
+      <div class="meta">
+        Aureva Commerce Private Limited<br />
+        Bandra Kurla Complex, Mumbai 400051, India<br />
+        GSTIN: ${escapeHtml(invoice.gstin)}
+      </div>
+    </div>
+    <div style="text-align: right;">
+      <h2>Tax Invoice</h2>
+      <div class="meta">
+        ${escapeHtml(invoice.invoiceNumber)}<br />
+        Issued ${new Date(invoice.issuedAt).toLocaleDateString('en-IN', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })}<br />
+        Order ${escapeHtml(invoice.orderNumber)}
+      </div>
+    </div>
+  </div>
+
+  <hr class="rule" />
+
+  <div class="grid">
+    <div>
+      <div class="label">Billed To</div>
+      <strong>${escapeHtml(invoice.customerName)}</strong><br />
+      ${escapeHtml(invoice.customerEmail)}<br />
+      ${escapeHtml(invoice.customerPhone)}
+    </div>
+    <div>
+      <div class="label">Shipping Address</div>
+      <strong>${escapeHtml(address.fullName)}</strong><br />
+      ${escapeHtml(address.street)}<br />
+      ${escapeHtml(address.city)}, ${escapeHtml(address.state)} ${escapeHtml(address.postalCode)}<br />
+      ${escapeHtml(address.country)}
+    </div>
+    <div>
+      <div class="label">Payment</div>
+      ${escapeHtml(invoice.paymentMethod)}<br />
+      Status: ${escapeHtml(invoice.paymentStatus)}<br />
+      ${invoice.couponCode ? `Coupon: ${escapeHtml(invoice.couponCode)}` : 'No coupon applied'}
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th class="right">Qty</th>
+        <th class="right">Unit Price</th>
+        <th class="right">Amount</th>
+      </tr>
+    </thead>
+    <tbody>${itemRows}</tbody>
+  </table>
+
+  <div class="totals">
+    <div><span>Subtotal</span><span>${formatPrice(invoice.subtotal)}</span></div>
+    ${
+      invoice.discount > 0
+        ? `<div><span>Discount</span><span>-${formatPrice(invoice.discount)}</span></div>`
+        : ''
+    }
+    <div><span>Shipping</span><span>${
+      invoice.shippingFee === 0 ? 'Complimentary' : formatPrice(invoice.shippingFee)
+    }</span></div>
+    <div><span>GST (18%)</span><span>${formatPrice(invoice.tax)}</span></div>
+    <div class="grand"><span>Total</span><span>${formatPrice(invoice.total)}</span></div>
+  </div>
+
+  <div class="footer">
+    This is a computer-generated tax invoice and does not require a signature.<br />
+    Prices are inclusive of GST where applicable. For assistance, contact care@aureva.com.
+  </div>
+</body>
+</html>`;
+
+      const blob = new Blob([invoiceHtml], { type: 'text/html;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${invoice.invoiceNumber}.html`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      showToast(`Invoice ${invoice.invoiceNumber} downloaded`);
+    } catch (err: any) {
+      showToast(err.message || 'Could not download invoice', 'error');
+    } finally {
+      setDownloadingInvoiceId(null);
+    }
+  };
+
+  const activeOrders = orders.filter((order) =>
+    ACTIVE_ORDER_STATUSES.includes(order.status)
+  );
+  const deliveredOrders = orders.filter((order) => order.status === 'Delivered');
+  const cancelledOrders = orders.filter((order) =>
+    ['Cancelled', 'Returned'].includes(order.status)
+  );
+
+  const filteredOrders = orders.filter((order) => {
+    if (statusFilter === 'active') return ACTIVE_ORDER_STATUSES.includes(order.status);
+    if (statusFilter === 'delivered') return order.status === 'Delivered';
+    if (statusFilter === 'cancelled') return ['Cancelled', 'Returned'].includes(order.status);
+    return true;
+  });
+
+  const filterOptions: { id: OrderFilter; label: string; count: number }[] = [
+    { id: 'all', label: 'All Orders', count: orders.length },
+    { id: 'active', label: 'In Progress', count: activeOrders.length },
+    { id: 'delivered', label: 'Delivered', count: deliveredOrders.length },
+    { id: 'cancelled', label: 'Cancelled & Returns', count: cancelledOrders.length },
+  ];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       <div>
@@ -143,6 +351,32 @@ export const OrdersPage: React.FC = () => {
           Review dispatch statuses, courier tracking numbers, invoices, and return requests.
         </p>
       </div>
+
+      {!isLoading && orders.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {filterOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => setStatusFilter(option.id)}
+              className={`rounded-full border px-3.5 py-2 text-[11px] font-semibold transition-colors ${
+                statusFilter === option.id
+                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:text-neutral-900'
+              }`}
+            >
+              {option.label}
+              <span
+                className={`ml-1.5 tabular-nums ${
+                  statusFilter === option.id ? 'text-neutral-300' : 'text-neutral-400'
+                }`}
+              >
+                ({option.count})
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="py-20 text-center text-xs text-neutral-500 italic">

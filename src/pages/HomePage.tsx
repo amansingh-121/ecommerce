@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
   Sparkles,
@@ -8,10 +8,50 @@ import {
   RotateCcw,
   ShieldCheck,
   Star,
+  BadgeCheck,
+  Headphones,
+  Mail,
+  Send,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
 import { ProductCard } from '../components/ProductCard.tsx';
 import { formatPrice } from '../utils/currency.ts';
+import { Coupon, FeaturedReview } from '../types/ecommerce.ts';
+
+const DEFAULT_TESTIMONIALS = [
+  {
+    id: 'static-1',
+    name: 'Ananya Sen',
+    city: 'Mumbai, India',
+    quote:
+      'The craftsmanship on the tailored outerwear and acoustic monitors is exceptional. Delivery to BKC took less than 24 hours in immaculate packaging.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+  {
+    id: 'static-2',
+    name: 'Marcus Vance',
+    city: 'Bengaluru, India',
+    quote:
+      'The planar magnetic headphones deliver startling acoustic detail across recording sessions. True studio reference grade hardware.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+  {
+    id: 'static-3',
+    name: 'David Sterling',
+    city: 'Delhi NCR, India',
+    quote:
+      'The automatic movement watch is gaining barely 2 seconds a day. The sapphire crystal and sunburst dial catch ambient light with stunning presence.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+];
 
 export const HomePage: React.FC = () => {
   const {
@@ -19,13 +59,127 @@ export const HomePage: React.FC = () => {
     categories,
     setCurrentView,
     navigateToCategory,
+    navigateToProduct,
     setIsConciergeOpen,
     setSelectedCategory,
+    showToast,
   } = useStore();
 
   const featuredProducts = products.filter((p) => p.isFeatured).slice(0, 4);
   const bestSellers = products.filter((p) => p.isBestSeller).slice(0, 4);
   const newArrivals = products.filter((p) => p.isNewArrival).slice(0, 4);
+
+  const [featuredReviews, setFeaturedReviews] = useState<FeaturedReview[]>([]);
+  const [activeCoupons, setActiveCoupons] = useState<Coupon[]>([]);
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [newsletterFeedback, setNewsletterFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadHighlights = async () => {
+      try {
+        const [reviewsRes, couponsRes] = await Promise.all([
+          fetch('/api/reviews/featured'),
+          fetch('/api/coupons/active'),
+        ]);
+
+        if (reviewsRes.ok) {
+          const data = await reviewsRes.json();
+          if (!cancelled) setFeaturedReviews(data.reviews || []);
+        }
+        if (couponsRes.ok) {
+          const data = await couponsRes.json();
+          if (!cancelled) setActiveCoupons(data.coupons || []);
+        }
+      } catch (err) {
+        console.error('Failed to load storefront highlights:', err);
+      }
+    };
+
+    loadHighlights();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const displayReviews = featuredReviews.length
+    ? featuredReviews.map((review) => ({
+        id: review.id,
+        name: review.userName,
+        city: review.verifiedPurchase ? 'Verified purchase' : 'Aureva client',
+        quote: review.comment,
+        rating: review.rating,
+        productName: review.productName,
+        productSlug: review.productSlug,
+      }))
+    : DEFAULT_TESTIMONIALS;
+
+  const offerCodes = activeCoupons.length
+    ? activeCoupons.slice(0, 4).map((coupon) => ({
+        code: coupon.code,
+        description: coupon.description,
+        minimumOrder: coupon.minimumOrder,
+      }))
+    : [
+        {
+          code: 'AUREVA15',
+          description: '15% off orders over ₹2,000',
+          minimumOrder: 2000,
+        },
+      ];
+
+  const handleCopyCode = async (code: string) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      showToast(`Code ${code} copied to clipboard`);
+      window.setTimeout(() => setCopiedCode((current) => (current === code ? null : current)), 2200);
+    } catch {
+      showToast(`Use code ${code} at checkout`, 'info');
+    }
+  };
+
+  const handleNewsletterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsletterEmail.trim()) return;
+
+    setIsSubscribing(true);
+    setNewsletterFeedback(null);
+
+    try {
+      const res = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: newsletterEmail.trim() }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        setNewsletterFeedback({
+          type: 'error',
+          message: data.error || 'Could not join the list. Please try again.',
+        });
+        return;
+      }
+
+      setNewsletterFeedback({ type: 'success', message: data.message });
+      setNewsletterEmail('');
+      showToast('Welcome to the Aureva Society');
+    } catch (err) {
+      setNewsletterFeedback({
+        type: 'error',
+        message: 'Could not join the list. Please try again.',
+      });
+    } finally {
+      setIsSubscribing(false);
+    }
+  };
 
   return (
     <div className="space-y-16 sm:space-y-24 font-sans">
@@ -98,7 +252,7 @@ export const HomePage: React.FC = () => {
             <div className="lg:col-span-5 relative">
               <div className="relative rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200 shadow-xl group">
                 <img
-                  src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?q=80&w=1200&auto=format&fit=crop"
+                  src="/images/1539109136881-3be0616acf4b.jpg"
                   alt="Aureva Curated Fashion & Masterpiece Living"
                   className="w-full aspect-[4/5] object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out"
                 />
@@ -162,27 +316,27 @@ export const HomePage: React.FC = () => {
             {
               name: 'Electronics',
               desc: 'Wireless audio, smart timepieces & studio gear',
-              image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600&auto=format&fit=crop',
+              image: '/images/1505740420928-5e560c06d30e.jpg',
             },
             {
               name: 'Fashion',
               desc: 'Tailored apparel, artisan leather & eyewear',
-              image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=600&auto=format&fit=crop',
+              image: '/images/1515886657613-9f3515b0c78f.jpg',
             },
             {
               name: 'Home',
               desc: 'Sculptural ceramics, candles & tableware',
-              image: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?q=80&w=600&auto=format&fit=crop',
+              image: '/images/1507473885765-e6ed057f782c.jpg',
             },
             {
               name: 'Beauty',
               desc: 'Botanical skincare, parfum & rituals',
-              image: 'https://images.unsplash.com/photo-1608248597359-3a362143eaec?q=80&w=600&auto=format&fit=crop',
+              image: '/images/1596462502278-27bfdc403348.jpg',
             },
             {
               name: 'Sports',
               desc: 'Cork yoga, running & strength essentials',
-              image: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?q=80&w=600&auto=format&fit=crop',
+              image: '/images/1622279457486-62dcc4a431d6.jpg',
             },
           ].map((cat) => (
             <button
@@ -215,6 +369,50 @@ export const HomePage: React.FC = () => {
               </div>
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* 2.5 The Aureva Service Promise */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            {
+              title: 'Authenticity guaranteed',
+              description: 'Every piece is inspected and backed by our certificate of quality.',
+              icon: BadgeCheck,
+            },
+            {
+              title: 'Pan-India delivery',
+              description: 'Insured, tracked dispatch with complimentary shipping over ₹2,999.',
+              icon: Truck,
+            },
+            {
+              title: '7-day easy returns',
+              description: 'Changed your mind? Arrange a prepaid return pickup in a few clicks.',
+              icon: RotateCcw,
+            },
+            {
+              title: 'Private client care',
+              description: 'Real specialists available seven days a week for styling and support.',
+              icon: Headphones,
+            },
+          ].map((promise) => {
+            const Icon = promise.icon;
+            return (
+              <div
+                key={promise.title}
+                className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-2xs transition-all hover:border-neutral-300 hover:shadow-sm"
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#f6efe8] text-[#965b2a] flex items-center justify-center mb-3">
+                  <Icon className="w-5 h-5 stroke-[1.75]" />
+                </div>
+                <h3 className="text-sm font-bold text-neutral-950 font-serif">{promise.title}</h3>
+                <p className="mt-1 text-[11px] leading-relaxed text-neutral-500">
+                  {promise.description}
+                </p>
+              </div>
+            );
+          })}
         </div>
       </section>
 
@@ -317,6 +515,29 @@ export const HomePage: React.FC = () => {
             <p className="text-xs sm:text-sm text-neutral-600">
               Use code <span className="font-mono font-bold text-neutral-900 bg-neutral-100 px-1.5 py-0.5 rounded">AUREVA15</span> during checkout. Complimentary pan-India delivery on orders over ₹2,999.
             </p>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              {offerCodes.map((offer) => (
+                <button
+                  key={offer.code}
+                  type="button"
+                  onClick={() => handleCopyCode(offer.code)}
+                  title={`${offer.description} · Minimum spend ${formatPrice(offer.minimumOrder)}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-[11px] font-semibold text-neutral-800 transition-colors hover:border-[#965b2a] hover:bg-white cursor-pointer"
+                >
+                  <span className="font-mono font-bold text-[#965b2a]">{offer.code}</span>
+                  <span className="text-neutral-300">·</span>
+                  <span className="font-normal text-neutral-500">
+                    {copiedCode === offer.code ? 'Copied' : 'Copy code'}
+                  </span>
+                  {copiedCode === offer.code ? (
+                    <Check className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <Copy className="w-3 h-3 text-neutral-400" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
 
           <button
@@ -333,6 +554,71 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
+      {/* 6.5 The Aureva Society Newsletter */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl bg-neutral-950 px-6 py-10 sm:px-10 sm:py-12 text-white">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#965b2a]/20 blur-3xl"
+          />
+          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
+            <div className="space-y-3">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-[#d8a878]">
+                The Aureva Society
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-serif font-bold tracking-tight">
+                Private drops, considered offers, first access.
+              </h2>
+              <p className="max-w-md text-xs sm:text-sm leading-relaxed text-neutral-400">
+                Join our list for new arrivals, limited allocations and members-only pricing.
+                No noise — just the pieces worth knowing about.
+              </p>
+              <div className="flex items-center gap-2 text-[11px] text-neutral-500">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Unsubscribe anytime. We never share your details.</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleNewsletterSubmit} className="space-y-3">
+              <label htmlFor="newsletter-email" className="block text-xs font-semibold text-neutral-300">
+                Email address
+              </label>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
+                  <input
+                    id="newsletter-email"
+                    type="email"
+                    value={newsletterEmail}
+                    onChange={(e) => setNewsletterEmail(e.target.value)}
+                    placeholder="you@example.com"
+                    className="w-full rounded-xl border border-neutral-700 bg-neutral-900/80 py-3 pl-10 pr-3 text-sm text-white placeholder:text-neutral-500 focus:border-[#d8a878] focus:outline-none"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isSubscribing}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#965b2a] px-5 py-3 text-xs font-bold text-white transition-colors hover:bg-[#834f24] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  <span>{isSubscribing ? 'Joining...' : 'Join the Society'}</span>
+                </button>
+              </div>
+              {newsletterFeedback && (
+                <p
+                  className={`text-[11px] leading-relaxed ${
+                    newsletterFeedback.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
+                >
+                  {newsletterFeedback.message}
+                </p>
+              )}
+            </form>
+          </div>
+        </div>
+      </section>
+
       {/* 7. Verified Customer Reviews */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8 text-center max-w-xl mx-auto">
@@ -345,42 +631,44 @@ export const HomePage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              name: 'Ananya Sen',
-              city: 'Mumbai, India',
-              quote: 'The craftsmanship on the tailored outerwear and acoustic monitors is exceptional. Delivery to BKC took less than 24 hours in immaculate packaging.',
-              rating: 5,
-            },
-            {
-              name: 'Marcus Vance',
-              city: 'Bengaluru, India',
-              quote: 'The planar magnetic headphones deliver startling acoustic detail across recording sessions. True studio reference grade hardware.',
-              rating: 5,
-            },
-            {
-              name: 'David Sterling',
-              city: 'Delhi NCR, India',
-              quote: 'The automatic movement watch is gaining barely 2 seconds a day. The sapphire crystal and sunburst dial catch ambient light with stunning presence.',
-              rating: 5,
-            },
-          ].map((rev) => (
-            <div key={rev.name} className="p-6 bg-white border border-neutral-200 rounded-2xl shadow-xs space-y-4">
+          {displayReviews.map((rev) => (
+            <div
+              key={rev.id}
+              className="p-6 bg-white border border-neutral-200 rounded-2xl shadow-xs space-y-4"
+            >
               <div className="flex items-center gap-1 text-amber-500">
-                {[...Array(rev.rating)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400 stroke-amber-400" />
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className={`w-4 h-4 ${
+                      i < rev.rating
+                        ? 'fill-amber-400 stroke-amber-400'
+                        : 'stroke-neutral-300'
+                    }`}
+                  />
                 ))}
               </div>
               <p className="text-xs sm:text-sm text-neutral-700 italic leading-relaxed">
                 "{rev.quote}"
               </p>
-              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-xs">
+              <div className="pt-2 border-t border-neutral-100 flex items-end justify-between gap-3 text-xs">
                 <div>
                   <span className="font-bold text-neutral-900 block">{rev.name}</span>
                   <span className="text-neutral-400 text-[11px]">{rev.city}</span>
+                  {rev.productSlug && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (rev.productSlug) navigateToProduct(rev.productSlug);
+                      }}
+                      className="mt-1 block text-left text-[10px] font-semibold text-[#965b2a] hover:underline"
+                    >
+                      on {rev.productName}
+                    </button>
+                  )}
                 </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold">
-                  Verified Client
+                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold shrink-0">
+                  Verified Buyer
                 </span>
               </div>
             </div>

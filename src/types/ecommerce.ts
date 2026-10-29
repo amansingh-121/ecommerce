@@ -9,6 +9,7 @@ export interface User {
   avatarUrl?: string;
   savedAddresses: Address[];
   createdAt: string;
+  isActive?: boolean;
 }
 
 export interface Address {
@@ -50,6 +51,43 @@ export interface Review {
   verifiedPurchase: boolean;
   createdAt: string;
   helpfulCount: number;
+  isApproved?: boolean;
+}
+
+export interface FeaturedReview extends Review {
+  productName: string;
+  productSlug: string;
+  productImage: string;
+}
+
+export interface AdminReview extends Review {
+  productName: string;
+  productSlug: string;
+}
+
+export interface AdminCustomer extends User {
+  orderCount: number;
+  lifetimeSpend: number;
+}
+
+export interface InvoiceData {
+  invoiceNumber: string;
+  orderNumber: string;
+  issuedAt: string;
+  gstin: string;
+  customerName: string;
+  customerEmail: string;
+  customerPhone: string;
+  shippingAddress: Address;
+  items: OrderItem[];
+  subtotal: number;
+  discount: number;
+  couponCode?: string;
+  shippingFee: number;
+  tax: number;
+  total: number;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
 }
 
 export interface Product {

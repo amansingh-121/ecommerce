@@ -21,7 +21,7 @@ export type AppView =
   | 'profile'
   | 'admin';
 
-export type AccountTab = 'profile' | 'addresses' | 'wishlist' | 'notifications';
+export type AccountTab = 'overview' | 'profile' | 'addresses' | 'wishlist' | 'notifications';
 
 interface Toast {
   id: string;
@@ -98,7 +98,7 @@ const DEFAULT_CUSTOMER: User = {
   email: 'alex@aureva.com',
   phone: '+91 98200 12345',
   role: 'customer',
-  avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=300&auto=format&fit=crop',
+  avatarUrl: '/images/1534528741775-53994a69daeb.jpg',
   savedAddresses: [
     {
       id: 'addr-default-1',
@@ -121,7 +121,7 @@ const DEFAULT_ADMIN: User = {
   email: 'admin@aureva.com',
   phone: '+91 98111 77788',
   role: 'admin',
-  avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=300&auto=format&fit=crop',
+  avatarUrl: '/images/1580489944761-15a19d654956.jpg',
   savedAddresses: [],
   createdAt: '2026-01-01T00:00:00Z',
 };
@@ -159,7 +159,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [currentUser, setCurrentUser] = useState<User>(() =>
     readStoredValue('aureva_user', DEFAULT_CUSTOMER)
   );
-  const [accountTab, setAccountTab] = useState<AccountTab>('profile');
+  const [accountTab, setAccountTab] = useState<AccountTab>('overview');
 
   const [wishlistIds, setWishlistIds] = useState<string[]>(() =>
     readStoredValue('aureva_wishlist', ['prod-elec-5', 'prod-elec-3'])

@@ -296,7 +296,7 @@ export const Header: React.FC = () => {
                 if (currentUser.role === 'admin') {
                   setCurrentView('admin');
                 } else {
-                  setAccountTab('profile');
+                  setAccountTab('overview');
                   setCurrentView('profile');
                 }
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -353,7 +353,7 @@ export const Header: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setAccountTab('profile');
+                  setAccountTab('overview');
                   setCurrentView('profile');
                   setIsMobileMenuOpen(false);
                 }}
