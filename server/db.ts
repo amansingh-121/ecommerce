@@ -892,7 +892,7 @@ class InMemoryStore {
     );
   }
 
-  getFeaturedReviews(limit = 4): FeaturedReview[] {
+  getFeaturedReviews(limit = 6): FeaturedReview[] {
     return [...this.reviews]
       .filter((review) => review.isApproved !== false)
       .sort(

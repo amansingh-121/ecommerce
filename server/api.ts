@@ -287,7 +287,7 @@ apiRouter.post('/products/:id/reviews', (req: Request, res: Response) => {
 });
 
 apiRouter.get('/reviews/featured', (_req: Request, res: Response) => {
-  return res.json({ reviews: dbStore.getFeaturedReviews(4) });
+  return res.json({ reviews: dbStore.getFeaturedReviews(6) });
 });
 
 // ----------------------------------------------------

@@ -14,6 +14,7 @@ import {
   Send,
   Copy,
   Check,
+  Quote,
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext.tsx';
 import { ProductCard } from '../components/ProductCard.tsx';
@@ -25,8 +26,7 @@ const DEFAULT_TESTIMONIALS = [
     id: 'static-1',
     name: 'Ananya Sen',
     city: 'Mumbai, India',
-    quote:
-      'The craftsmanship on the tailored outerwear and acoustic monitors is exceptional. Delivery to BKC took less than 24 hours in immaculate packaging.',
+    quote: 'The tailoring is flawless and the packaging felt genuinely luxurious.',
     rating: 5,
     productName: undefined as string | undefined,
     productSlug: undefined as string | undefined,
@@ -35,8 +35,7 @@ const DEFAULT_TESTIMONIALS = [
     id: 'static-2',
     name: 'Marcus Vance',
     city: 'Bengaluru, India',
-    quote:
-      'The planar magnetic headphones deliver startling acoustic detail across recording sessions. True studio reference grade hardware.',
+    quote: 'Studio-grade detail I can hear in every mix. Remarkable headphones.',
     rating: 5,
     productName: undefined as string | undefined,
     productSlug: undefined as string | undefined,
@@ -45,13 +44,63 @@ const DEFAULT_TESTIMONIALS = [
     id: 'static-3',
     name: 'David Sterling',
     city: 'Delhi NCR, India',
-    quote:
-      'The automatic movement watch is gaining barely 2 seconds a day. The sapphire crystal and sunburst dial catch ambient light with stunning presence.',
+    quote: 'Barely two seconds a day. The finishing is simply exceptional.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+  {
+    id: 'static-4',
+    name: 'Priya Nair',
+    city: 'Hyderabad, India',
+    quote: 'My evening ritual now feels like a five-star spa at home.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+  {
+    id: 'static-5',
+    name: 'Rohan Mehta',
+    city: 'Pune, India',
+    quote: 'The cork mat grips beautifully, even through the sweatiest sessions.',
+    rating: 5,
+    productName: undefined as string | undefined,
+    productSlug: undefined as string | undefined,
+  },
+  {
+    id: 'static-6',
+    name: 'Samantha Brooks',
+    city: 'Chennai, India',
+    quote: 'The vase is a sculptural centrepiece. Guests ask about it every time.',
     rating: 5,
     productName: undefined as string | undefined,
     productSlug: undefined as string | undefined,
   },
 ];
+
+const shortQuote = (quote: string, maxLength = 112) => {
+  const clean = quote.replace(/\s+/g, ' ').trim();
+  const sentenceEnd = clean.search(/[.!?](?:\s|$)/);
+
+  if (sentenceEnd !== -1) {
+    const sentence = clean.slice(0, sentenceEnd + 1);
+    if (sentence.length <= maxLength) return sentence;
+  }
+
+  if (clean.length <= maxLength) return clean;
+
+  const clipped = clean.slice(0, maxLength);
+  const lastSpace = clipped.lastIndexOf(' ');
+  return `${clipped.slice(0, lastSpace > maxLength * 0.6 ? lastSpace : maxLength).trimEnd()}…`;
+};
+
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join('');
 
 export const HomePage: React.FC = () => {
   const {
@@ -108,17 +157,23 @@ export const HomePage: React.FC = () => {
     };
   }, []);
 
-  const displayReviews = featuredReviews.length
-    ? featuredReviews.map((review) => ({
-        id: review.id,
-        name: review.userName,
-        city: review.verifiedPurchase ? 'Verified purchase' : 'Aureva client',
-        quote: review.comment,
-        rating: review.rating,
-        productName: review.productName,
-        productSlug: review.productSlug,
-      }))
-    : DEFAULT_TESTIMONIALS;
+  const displayReviews = (
+    featuredReviews.length
+      ? featuredReviews.map((review) => ({
+          id: review.id,
+          name: review.userName,
+          city: review.verifiedPurchase ? 'Verified purchase' : 'Aureva client',
+          quote: shortQuote(review.comment),
+          rating: review.rating,
+          productName: review.productName,
+          productSlug: review.productSlug,
+        }))
+      : DEFAULT_TESTIMONIALS
+  ).slice(0, 6);
+
+  const averageRating = displayReviews.length
+    ? (displayReviews.reduce((sum, review) => sum + review.rating, 0) / displayReviews.length).toFixed(1)
+    : '5.0';
 
   const offerCodes = activeCoupons.length
     ? activeCoupons.slice(0, 4).map((coupon) => ({
@@ -620,59 +675,99 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 7. Verified Customer Reviews */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 text-center max-w-xl mx-auto">
-          <span className="text-xs font-mono font-bold tracking-widest text-[#965b2a] uppercase block mb-1">
-            TESTIMONIALS
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-serif font-bold text-neutral-950">
-            Collector Reflections
-          </h2>
-        </div>
+      <section className="relative overflow-hidden border-y border-neutral-200/70 bg-gradient-to-b from-[#fbf7f1] via-white to-[#fbf7f1] py-14 sm:py-16">
+        <div className="pointer-events-none absolute -left-20 top-8 h-48 w-48 rounded-full bg-[#d8a878]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-8 h-56 w-56 rounded-full bg-[#965b2a]/10 blur-3xl" />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {displayReviews.map((rev) => (
-            <div
-              key={rev.id}
-              className="p-6 bg-white border border-neutral-200 rounded-2xl shadow-xs space-y-4"
-            >
-              <div className="flex items-center gap-1 text-amber-500">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${
-                      i < rev.rating
-                        ? 'fill-amber-400 stroke-amber-400'
-                        : 'stroke-neutral-300'
-                    }`}
-                  />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto mb-10 max-w-2xl text-center">
+            <span className="inline-flex items-center gap-2 rounded-full border border-[#e6d4bf] bg-white/75 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-[#965b2a]">
+              <Sparkles className="h-3 w-3" />
+              The Aureva Society
+            </span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-serif font-bold tracking-tight text-neutral-950">
+              Words From Our Collectors
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-500">
+              Six short notes from verified clients who brought Aureva home.
+            </p>
+            <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-neutral-200/80 bg-white/80 px-3 py-1.5">
+              <div className="flex items-center gap-0.5 text-amber-500">
+                {[...Array(5)].map((_, index) => (
+                  <Star key={index} className="h-3 w-3 fill-amber-400 stroke-amber-400" />
                 ))}
               </div>
-              <p className="text-xs sm:text-sm text-neutral-700 italic leading-relaxed">
-                "{rev.quote}"
-              </p>
-              <div className="pt-2 border-t border-neutral-100 flex items-end justify-between gap-3 text-xs">
-                <div>
-                  <span className="font-bold text-neutral-900 block">{rev.name}</span>
-                  <span className="text-neutral-400 text-[11px]">{rev.city}</span>
-                  {rev.productSlug && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (rev.productSlug) navigateToProduct(rev.productSlug);
-                      }}
-                      className="mt-1 block text-left text-[10px] font-semibold text-[#965b2a] hover:underline"
-                    >
-                      on {rev.productName}
-                    </button>
-                  )}
-                </div>
-                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-semibold shrink-0">
-                  Verified Buyer
-                </span>
-              </div>
+              <span className="text-[10px] font-semibold text-neutral-600">
+                {averageRating} average from verified collectors
+              </span>
             </div>
-          ))}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {displayReviews.map((rev) => (
+              <article
+                key={rev.id}
+                className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/90 bg-white p-6 shadow-[0_2px_12px_rgba(23,23,23,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-[#d8b995] hover:shadow-xl"
+              >
+                <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-[#965b2a] via-[#d8a878] to-transparent opacity-70" />
+
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-0.5 text-amber-500">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`h-3.5 w-3.5 ${
+                          i < rev.rating
+                            ? 'fill-amber-400 stroke-amber-400'
+                            : 'stroke-neutral-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <Quote className="h-8 w-8 fill-[#965b2a]/10 text-[#965b2a]/10" />
+                </div>
+
+                <blockquote className="mt-3 flex-1">
+                  <p className="text-[13px] leading-6 text-neutral-700">
+                    “{rev.quote}”
+                  </p>
+                </blockquote>
+
+                {rev.productSlug && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (rev.productSlug) navigateToProduct(rev.productSlug);
+                    }}
+                    className="mt-4 inline-flex w-fit max-w-full items-center gap-1 rounded-full border border-[#eadac8] bg-[#fdf9f4] px-2.5 py-1 text-[10px] font-semibold text-[#8a5426] transition-colors hover:bg-[#f6eadc]"
+                  >
+                    <span className="max-w-[190px] truncate">On {rev.productName}</span>
+                    <ChevronRight className="h-3 w-3 shrink-0" />
+                  </button>
+                )}
+
+                <div className="mt-5 flex items-center gap-3 border-t border-neutral-100 pt-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#f3e4d2] to-[#e8d0b5] text-[11px] font-bold text-[#7f4b20] ring-1 ring-[#e5d3bf]">
+                    {getInitials(rev.name)}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-xs font-bold text-neutral-900">
+                        {rev.name}
+                      </span>
+                      <BadgeCheck className="h-3.5 w-3.5 shrink-0 text-emerald-600" />
+                    </div>
+                    <span className="block truncate text-[10px] text-neutral-400">
+                      {rev.city}
+                    </span>
+                  </div>
+                  <span className="shrink-0 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700">
+                    Verified
+                  </span>
+                </div>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
